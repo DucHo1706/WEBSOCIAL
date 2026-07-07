@@ -1,0 +1,15 @@
+.git
+.gitignore
+.vs
+.vscode
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/publish
+.agents
+.gemini
+*.docx
+*.zip
+*.txt
+*.ps1

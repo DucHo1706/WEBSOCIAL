@@ -1,0 +1,32 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+
+# .NET / C#
+bin/
+obj/
+publish/
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDEs
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Temp/Backup files
+*.zip
+*.docx
+*.bak
+*.log
+doc_content.txt
+stitch_extracted/

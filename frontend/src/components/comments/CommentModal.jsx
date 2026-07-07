@@ -1,0 +1,94 @@
+import { useState } from "react";
+import { X, PaperPlaneRight } from "@phosphor-icons/react";
+import CommentItem from "./CommentItem";
+
+export default function CommentModal({ memory, comments, user, onClose, onAddComment, onEditComment, onDeleteComment, onPinToggle, onReact, onReply, replyToComment, cancelReply, loading, getRelativeTime }) {
+  const [newText, setNewText] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!newText.trim()) return;
+    onAddComment(newText);
+    setNewText("");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-card-custom rounded-3xl p-4 w-full max-w-sm shadow-2xl border border-custom max-h-[75vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-custom">
+          <h4 className="text-sm font-bold text-app">💬 Bình luận</h4>
+          <button onClick={onClose} className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full cursor-pointer text-secondary-custom">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Comments list */}
+        <div className="overflow-y-auto space-y-3 pr-1 flex-1">
+          {comments.length === 0 ? (
+            <p className="text-center text-[10px] text-stone-400 py-4">Chưa có bình luận nào.</p>
+          ) : (
+            comments.map((comment) => (
+              <div key={comment.CommentId}>
+                <CommentItem
+                  comment={comment}
+                  user={user}
+                  onEdit={onEditComment}
+                  onDelete={(id) => onDeleteComment(id)}
+                  onPinToggle={onPinToggle}
+                  onReact={onReact}
+                  onReply={onReply}
+                  getRelativeTime={getRelativeTime}
+                  isReply={false}
+                />
+                {/* Nested replies */}
+                {comment.Replies?.length > 0 && comment.Replies.map(reply => (
+                  <CommentItem
+                    key={reply.CommentId}
+                    comment={reply}
+                    user={user}
+                    onEdit={onEditComment}
+                    onDelete={(id) => onDeleteComment(id)}
+                    onPinToggle={onPinToggle}
+                    onReact={onReact}
+                    onReply={onReply}
+                    getRelativeTime={getRelativeTime}
+                    isReply={true}
+                  />
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Reply context bar */}
+        {replyToComment && (
+          <div className="flex items-center gap-1.5 text-[10px] text-coral-500 bg-coral-50 dark:bg-coral-500/10 px-2.5 py-1.5 rounded-lg flex-wrap mt-2">
+            <span className="font-bold shrink-0">↩ Đang phản hồi:</span>
+            <span className="text-stone-500 dark:text-stone-400 truncate flex-1">{replyToComment.User?.Username}: {replyToComment.Text}</span>
+            <button type="button" onClick={cancelReply} className="text-stone-400 hover:text-stone-600 cursor-pointer shrink-0">
+              <X size={12} />
+            </button>
+          </div>
+        )}
+
+        {/* Input form */}
+        <form onSubmit={handleSubmit} className="flex gap-2 mt-3 pt-2 border-t border-custom">
+          <input
+            type="text"
+            placeholder="Viết phản hồi của bạn..."
+            value={newText}
+            onChange={(e) => setNewText(e.target.value)}
+            className="flex-1 px-3 py-1.5 rounded-xl border border-custom focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-xs input-bg text-app"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="p-1.5 bg-coral-500 hover:bg-coral-600 text-white rounded-xl flex items-center justify-center active:scale-95 transition-all cursor-pointer shadow-md shadow-coral-500/10"
+          >
+            <PaperPlaneRight size={14} weight="fill" />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

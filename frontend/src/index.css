@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Outfit", sans-serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --color-coral-50: #FFF5F2;
+  --color-coral-100: #FFEAE4;
+  --color-coral-500: #FF7A59;
+  --color-coral-600: #E66645;
+}
+
+/* Light mode - override Tailwind color variables */
+:root {
+  --color-white: #ffffff;
+  --color-stone-50: #FAF9F6;
+  --color-stone-100: #F5F5F0;
+  --color-stone-150: #EDEDE8;
+  --color-stone-200: #E7E5E4;
+  --color-stone-250: #DCDAD8;
+  --color-stone-300: #D6D3D1;
+  --color-stone-400: #A8A29E;
+  --color-stone-450: #94908B;
+  --color-stone-500: #78716C;
+  --color-stone-600: #57534E;
+  --color-stone-700: #44403C;
+  --color-stone-800: #292524;
+  --color-stone-850: #1F1B1A;
+  --color-stone-900: #1C1917;
+  --color-stone-950: #0C0A09;
+  --color-neutral-50: #FAFAF9;
+  --color-neutral-100: #F5F5F4;
+}
+
+/* Dark mode - override the SAME variables with dark colors */
+.dark {
+  --color-white: #1c1c1e;
+  --color-stone-50: #1c1c1e;
+  --color-stone-100: #1c1c1e;
+  --color-stone-150: #222225;
+  --color-stone-200: #3a3a3c;
+  --color-stone-250: #48484a;
+  --color-stone-300: #5a5a5e;
+  --color-stone-400: #8e8e93;
+  --color-stone-450: #a0a0a5;
+  --color-stone-500: #aeaeb2;
+  --color-stone-600: #c7c7cc;
+  --color-stone-700: #d1d1d6;
+  --color-stone-800: #e8e8e4;
+  --color-stone-850: #ecece8;
+  --color-stone-900: #f5f5f0;
+  --color-stone-950: #fafafa;
+  --color-neutral-50: #1c1c1e;
+  --color-neutral-100: #1c1c1e;
+  --color-coral-50: #3a1a1a;
+  --color-coral-100: #4a2828;
+  --color-rose-50: #3a1a1a;
+  --color-rose-600: #ff6b6b;
+  --bg-primary: #000000;
+  --bg-card: #161618;
+  --bg-hover: #2a2a2c;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary, #FAF9F6);
+  color: var(--color-stone-900);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Lightbox overlay */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  animation: fadeIn 0.15s ease;
+}
+.lightbox-overlay img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: 8px;
+  cursor: default;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Utility classes */
+.bg-app { background-color: var(--bg-primary, #FAF9F6); }
+.bg-card-custom { background-color: var(--color-white); }
+.bg-hover-custom { background-color: var(--bg-hover, #f0efec); }
+.text-app { color: var(--color-stone-900); }
+.text-secondary-custom { color: var(--color-stone-500); }
+.text-tertiary-custom { color: var(--color-stone-400); }
+.border-custom { border-color: var(--color-stone-200); }
+.input-bg { background-color: var(--color-stone-50); }
+.input-border { border-color: var(--color-stone-200); }
+
+/* Card effect */
+.polaroid-card {
+  background: var(--color-white);
+  padding: 16px 16px 40px 16px;
+  box-shadow: 0 10px 30px -5px rgba(255, 122, 89, 0.08);
+}
+
+/* Floating heart animation */
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(0.5); }
+  50% { opacity: 1; transform: translateY(-40px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-80px) scale(0.8); }
+}
+.animate-float-up {
+  animation: floatUp 1.2s ease-out forwards;
+  font-size: 32px;
+}
