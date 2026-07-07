@@ -13,12 +13,12 @@ namespace backend.Controllers
     public class MemoryController : ControllerBase
     {
         private readonly IMemoryService _memoryService;
-        private readonly IWebHostEnvironment _env;
+        private readonly ImgBbService _imgBbService;
 
-        public MemoryController(IMemoryService memoryService, IWebHostEnvironment env)
+        public MemoryController(IMemoryService memoryService, ImgBbService imgBbService)
         {
             _memoryService = memoryService;
-            _env = env;
+            _imgBbService = imgBbService;
         }
 
         [HttpPost("upload")]
@@ -31,32 +31,17 @@ namespace backend.Controllers
 
             try
             {
-                // Create uploads directory
-                var uploadsFolder = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads");
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
                 var imageUrls = new List<string>();
 
                 foreach (var image in dto.Images)
                 {
                     if (image == null || image.Length == 0) continue;
                     
-                    // Generate unique file name
-                    var fileExtension = Path.GetExtension(image.FileName);
-                    var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                    // Save file
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    var uploadedUrl = await _imgBbService.UploadImageAsync(image);
+                    if (!string.IsNullOrEmpty(uploadedUrl))
                     {
-                        await image.CopyToAsync(fileStream);
+                        imageUrls.Add(uploadedUrl);
                     }
-
-                    // Generate web URL
-                    imageUrls.Add($"/uploads/{uniqueFileName}");
                 }
 
                 // Save post inside DB via Service layer
@@ -78,22 +63,15 @@ namespace backend.Controllers
                 List<string>? newImageUrls = null;
                 if (dto.Images != null && dto.Images.Count > 0 && dto.Images[0] != null && dto.Images[0].Length > 0)
                 {
-                    var uploadsFolder = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads");
-                    if (!Directory.Exists(uploadsFolder))
-                        Directory.CreateDirectory(uploadsFolder);
-
                     newImageUrls = new List<string>();
                     foreach (var image in dto.Images)
                     {
                         if (image == null || image.Length == 0) continue;
-                        var fileExtension = Path.GetExtension(image.FileName);
-                        var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-                        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        var uploadedUrl = await _imgBbService.UploadImageAsync(image);
+                        if (!string.IsNullOrEmpty(uploadedUrl))
                         {
-                            await image.CopyToAsync(fileStream);
+                            newImageUrls.Add(uploadedUrl);
                         }
-                        newImageUrls.Add($"/uploads/{uniqueFileName}");
                     }
                 }
 

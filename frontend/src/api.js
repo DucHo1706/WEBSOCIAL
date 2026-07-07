@@ -21,7 +21,13 @@ const isRateLimited = (path) => {
   return entry.count > MAX_REQUESTS;
 };
 
-export const getApiUrl = (path) => `${API_BASE}${path}`;
+export const getApiUrl = (path) => {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  return `${API_BASE}${path}`;
+};
 
 export const apiRequest = async (path, method = "GET", body = null, isMultipart = false) => {
   // Skip rate limiting for GET requests

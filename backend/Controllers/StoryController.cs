@@ -13,12 +13,12 @@ namespace backend.Controllers
     public class StoryController : ControllerBase
     {
         private readonly IStoryService _storyService;
-        private readonly IWebHostEnvironment _env;
+        private readonly ImgBbService _imgBbService;
 
-        public StoryController(IStoryService storyService, IWebHostEnvironment env)
+        public StoryController(IStoryService storyService, ImgBbService imgBbService)
         {
             _storyService = storyService;
-            _env = env;
+            _imgBbService = imgBbService;
         }
 
         [HttpPost("upload")]
@@ -29,17 +29,11 @@ namespace backend.Controllers
 
             try
             {
-                var uploadsFolder = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads");
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
-
-                var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(dto.Image.FileName)}";
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                    await dto.Image.CopyToAsync(fileStream);
-
-                var imageWebUrl = $"/uploads/{uniqueFileName}";
+                var imageWebUrl = await _imgBbService.UploadImageAsync(dto.Image);
+                if (string.IsNullOrEmpty(imageWebUrl))
+                {
+                    return BadRequest(new { message = "Failed to upload image to ImgBB." });
+                }
                 var story = await _storyService.CreateStoryAsync(dto.UserId, imageWebUrl, dto.Caption);
                 return Ok(story);
             }

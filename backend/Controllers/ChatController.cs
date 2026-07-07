@@ -14,12 +14,12 @@ namespace backend.Controllers
     public class ChatController : ControllerBase
     {
         private readonly IChatService _chatService;
-        private readonly IWebHostEnvironment _env;
+        private readonly ImgBbService _imgBbService;
 
-        public ChatController(IChatService chatService, IWebHostEnvironment env)
+        public ChatController(IChatService chatService, ImgBbService imgBbService)
         {
             _chatService = chatService;
-            _env = env;
+            _imgBbService = imgBbService;
         }
 
         [HttpGet("conversations/{userId}")]
@@ -90,25 +90,10 @@ namespace backend.Controllers
             {
                 string? imageWebUrl = null;
 
-                // Handle image upload at controller level (HTTP request handling)
+                // Handle image upload using ImgBB API
                 if (dto.Image != null && dto.Image.Length > 0)
                 {
-                    var uploadsFolder = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads");
-                    if (!Directory.Exists(uploadsFolder))
-                    {
-                        Directory.CreateDirectory(uploadsFolder);
-                    }
-
-                    var fileExtension = Path.GetExtension(dto.Image.FileName);
-                    var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await dto.Image.CopyToAsync(fileStream);
-                    }
-
-                    imageWebUrl = $"/uploads/{uniqueFileName}";
+                    imageWebUrl = await _imgBbService.UploadImageAsync(dto.Image);
                 }
 
                 var responseMessage = await _chatService.SaveChatMessageAsync(dto.UserId, dto.ReceiverId, dto.GroupChatId, dto.MessageText, imageWebUrl, dto.ReplyToMessageId, dto.ReplyToText);

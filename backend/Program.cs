@@ -39,6 +39,7 @@ builder.Services.AddScoped<IMemoryService, MemoryService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IStoryService, StoryService>();
+builder.Services.AddHttpClient<ImgBbService>();
 
 // Add SignalR for real-time chat & reactions
 builder.Services.AddSignalR()
