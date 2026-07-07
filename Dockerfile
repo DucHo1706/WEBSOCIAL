@@ -22,6 +22,6 @@ COPY --from=backend-builder /app/publish .
 # Copy frontend build into wwwroot
 COPY --from=frontend-builder /app/frontend/dist ./wwwroot
 
-# Expose port and start backend, reading PORT env variable set by Railway (defaults to 20051)
-EXPOSE 20051
-CMD ["sh", "-c", "dotnet backend.dll --urls \"http://*:${PORT:-20051}\""]
+# Expose port and start backend, reading PORT env variable set by Railway (defaults to 8080)
+EXPOSE 8080
+CMD ["sh", "-c", "dotnet backend.dll --urls \"http://*:${PORT:-8080}\""]
