@@ -443,26 +443,28 @@ export default function App() {
       </div>
 
       {/* Search & Dark Mode Controls */}
-      <div className="sticky top-0 z-50 bg-card-custom/80 backdrop-blur-md border-b border-custom px-4 py-2.5 flex items-center gap-2 max-w-md mx-auto w-full">
-        <div className="relative flex-1">
-          <MagnifyingGlass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-custom" />
-          <input
-            type="text"
-            placeholder="Tìm kiếm bài viết, bạn bè..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setShowSearch(true)}
-            className="w-full pl-8 pr-3 py-2 rounded-full bg-stone-100 dark:bg-[#2C2C2E] border border-stone-200 dark:border-[#3A3A3C] focus:outline-none focus:ring-2 focus:ring-coral-500/20 text-xs text-app placeholder-secondary-custom"
-          />
+      {activeTab !== "Chat" && (
+        <div className="sticky top-0 z-50 bg-card-custom/80 backdrop-blur-md border-b border-custom px-4 py-2.5 flex items-center gap-2 max-w-md mx-auto w-full">
+          <div className="relative flex-1">
+            <MagnifyingGlass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-custom" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm bài viết, bạn bè..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setShowSearch(true)}
+              className="w-full pl-8 pr-3 py-2 rounded-full bg-stone-100 dark:bg-[#2C2C2E] border border-stone-200 dark:border-[#3A3A3C] focus:outline-none focus:ring-2 focus:ring-coral-500/20 text-xs text-app placeholder-secondary-custom"
+            />
+          </div>
+          <button
+            onClick={toggleDark}
+            className="p-2 rounded-xl hover:bg-stone-100 dark:hover:bg-[#2C2C2E] text-secondary-custom transition-colors cursor-pointer"
+            title={isDark ? "Chế độ sáng" : "Chế độ tối"}
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
         </div>
-        <button
-          onClick={toggleDark}
-          className="p-2 rounded-xl hover:bg-stone-100 dark:hover:bg-[#2C2C2E] text-secondary-custom transition-colors cursor-pointer"
-          title={isDark ? "Chế độ sáng" : "Chế độ tối"}
-        >
-          {isDark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-      </div>
+      )}
 
       {/* Search Dropdown */}
       {showSearch && searchQuery.length >= 2 && (
