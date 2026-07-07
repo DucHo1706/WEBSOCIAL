@@ -31,8 +31,10 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
   }, []);
 
   useEffect(() => {
-    const handleGlobalClick = () => {
-      setOpenMsgMenuId(null);
+    const handleGlobalClick = (e) => {
+      if (!e.target.closest(".group-msg-bubble")) {
+        setOpenMsgMenuId(null);
+      }
     };
     window.addEventListener("click", handleGlobalClick);
     return () => window.removeEventListener("click", handleGlobalClick);
@@ -393,7 +395,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                           {msg.ReplyToText}
                         </div>
                       )}
-                      <div className="relative group cursor-pointer" onClick={(e) => {
+                      <div className="relative group cursor-pointer group-msg-bubble" onClick={(e) => {
                         e.stopPropagation();
                         setOpenMsgMenuId(openMsgMenuId === msg.ChatMessageId ? null : msg.ChatMessageId);
                       }}>
