@@ -217,7 +217,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
     
     // Broadcast emoji floating locally and to group via SignalR
     if (connection && activeConv) {
-      connection.invoke("OnEmojiFloat", activeConv.UserId.ToString(), emoji);
+      connection.invoke("OnEmojiFloat", activeConv.UserId, emoji);
     }
     
     spawnFloatingEmoji(emoji);
@@ -375,11 +375,12 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                           }`}
                         >
                           {msg.ImageUrl && (
-                            <div className="rounded-xl overflow-hidden mb-2 bg-stone-950 border border-stone-250 aspect-[4/3]">
+                            <div className="rounded-xl overflow-hidden mb-1.5 max-w-[200px] border border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-850">
                               <img
                                 src={getApiUrl(msg.ImageUrl)}
                                 alt="Gửi ảnh"
-                                className="w-full h-full object-cover"
+                                className="max-w-full max-h-[160px] object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => window.open(getApiUrl(msg.ImageUrl), '_blank')}
                               />
                             </div>
                           )}

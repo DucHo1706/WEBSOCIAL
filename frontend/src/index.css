@@ -123,3 +123,12 @@ body {
   animation: floatUp 1.2s ease-out forwards;
   font-size: 32px;
 }
+
+/* Tactile active feedback for interactive elements */
+button:active,
+[role="button"]:active,
+.cursor-pointer:active {
+  transform: scale(0.96) !important;
+  opacity: 0.85;
+  transition: transform 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.08s ease;
+}
