@@ -67,6 +67,21 @@ namespace backend.Controllers
             return Ok(user);
         }
 
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            try
+            {
+                var success = await _authService.ChangePasswordAsync(request.UserId, request.OldPassword, request.NewPassword);
+                if (!success) return BadRequest(new { message = "Mật khẩu cũ không đúng." });
+                return Ok(new { message = "Đổi mật khẩu thành công." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpPost("upload-image")]
         public async Task<IActionResult> UploadProfileImage(IFormFile file)
         {
@@ -108,5 +123,11 @@ namespace backend.Controllers
         public string? AvatarUrl { get; set; }
         public string? CoverImageUrl { get; set; }
         public string? Bio { get; set; }
+    }
+    public class ChangePasswordRequest
+    {
+        public Guid UserId { get; set; }
+        public string OldPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
     }
 }

@@ -12,6 +12,7 @@ namespace backend.Services
         Task<User?> RegisterAsync(string username, string email, string password, string? avatarUrl);
         Task<User?> LoginAsync(string email, string password);
         Task<User?> UpdateProfileAsync(Guid userId, string? username, string? avatarUrl, string? coverImageUrl, string? bio);
+        Task<bool> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword);
     }
 
     public class AuthService : IAuthService
@@ -100,6 +101,22 @@ namespace backend.Services
                 var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
                 return Convert.ToBase64String(hashedBytes);
             }
+        }
+
+        public async Task<bool> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return false;
+
+            if (user.PasswordHash != HashPassword(oldPassword)) return false;
+
+            if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+                throw new Exception("Mật khẩu mới phải có ít nhất 6 ký tự.");
+
+            user.PasswordHash = HashPassword(newPassword);
+            await _userRepository.SaveChangesAsync();
+            await _activityLogRepository.LogActivityAsync(userId, "ChangePassword", "Đã đổi mật khẩu tài khoản.");
+            return true;
         }
     }
 }
