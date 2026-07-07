@@ -384,26 +384,30 @@ namespace backend.Services
             var memory = await _memoryRepository.GetByIdAsync(memoryId);
             if (memory == null) throw new Exception("Memory not found.");
 
-            var existingReaction = await _memoryRepository.GetReactionAsync(memoryId, userId, emojiType);
+            // 1. Get all current reactions by this user on this memory
+            var existingReactions = await _memoryRepository.GetUserReactionsOnMemoryAsync(memoryId, userId);
+            var sameReaction = existingReactions.FirstOrDefault(r => r.EmojiType == emojiType);
 
-            if (existingReaction != null)
+            // 2. Remove all existing reactions for this user on this memory
+            foreach (var reaction in existingReactions)
             {
-                await _memoryRepository.RemoveReactionAsync(existingReaction);
-                await _memoryRepository.SaveChangesAsync();
-
+                await _memoryRepository.RemoveReactionAsync(reaction);
+                
                 var removeEvent = new ReactionResponseDto
                 {
+                    ReactionId = reaction.ReactionId,
                     MemoryId = memoryId,
                     UserId = userId,
                     Username = user.Username,
-                    EmojiType = emojiType,
+                    EmojiType = reaction.EmojiType,
                     IsRemoved = true
                 };
-
                 await _hubContext.Clients.All.SendAsync("OnReactionUpdate", removeEvent);
-                return removeEvent;
             }
-            else
+            await _memoryRepository.SaveChangesAsync();
+
+            // 3. If they clicked a new emoji type, add it
+            if (sameReaction == null)
             {
                 var reaction = new Reaction
                 {
@@ -443,6 +447,15 @@ namespace backend.Services
                 await _hubContext.Clients.All.SendAsync("OnReactionUpdate", addEvent);
                 return addEvent;
             }
+
+            return new ReactionResponseDto
+            {
+                MemoryId = memoryId,
+                UserId = userId,
+                Username = user.Username,
+                EmojiType = emojiType,
+                IsRemoved = true
+            };
         }
 
         // Helper to parse ImagesJson into a List<string>
@@ -452,20 +465,28 @@ namespace backend.Services
             if (user == null) throw new Exception("User not found.");
             var comment = await _memoryRepository.GetCommentByIdAsync(commentId);
             if (comment == null) throw new Exception("Comment not found.");
-            var existing = await _memoryRepository.GetCommentReactionAsync(commentId, userId, emojiType);
-            if (existing != null)
+            
+            // Get all current comment reactions of this user on this comment
+            var existingReactions = await _memoryRepository.GetUserReactionsOnCommentAsync(commentId, userId);
+            var sameReaction = existingReactions.FirstOrDefault(r => r.EmojiType == emojiType);
+
+            // Remove all existing reactions
+            foreach (var reaction in existingReactions)
             {
-                _memoryRepository.RemoveCommentReaction(existing);
-                await _memoryRepository.SaveChangesAsync();
-                return new ReactionResponseDto { MemoryId = comment.MemoryId, UserId = userId, Username = user.Username, EmojiType = emojiType, IsRemoved = true };
+                _memoryRepository.RemoveCommentReaction(reaction);
             }
-            else
+            await _memoryRepository.SaveChangesAsync();
+
+            // If same reaction was not found, add it
+            if (sameReaction == null)
             {
                 var reaction = new CommentReaction { CommentId = commentId, UserId = userId, EmojiType = emojiType };
                 await _memoryRepository.AddCommentReactionAsync(reaction);
                 await _memoryRepository.SaveChangesAsync();
                 return new ReactionResponseDto { MemoryId = comment.MemoryId, UserId = userId, Username = user.Username, EmojiType = emojiType, IsRemoved = false };
             }
+
+            return new ReactionResponseDto { MemoryId = comment.MemoryId, UserId = userId, Username = user.Username, EmojiType = emojiType, IsRemoved = true };
         }
 
         public async Task PinCommentAsync(Guid commentId, Guid userId)

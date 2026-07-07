@@ -21,9 +21,11 @@ namespace backend.Repositories
         void DeleteComment(Comment comment);
         Task<Comment?> GetCommentByIdAsync(Guid commentId);
         Task<Reaction?> GetReactionAsync(Guid memoryId, Guid userId, string emojiType);
+        Task<List<Reaction>> GetUserReactionsOnMemoryAsync(Guid memoryId, Guid userId);
         Task AddReactionAsync(Reaction reaction);
         Task RemoveReactionAsync(Reaction reaction);
         Task<CommentReaction?> GetCommentReactionAsync(Guid commentId, Guid userId, string emojiType);
+        Task<List<CommentReaction>> GetUserReactionsOnCommentAsync(Guid commentId, Guid userId);
         Task AddCommentReactionAsync(CommentReaction reaction);
         void RemoveCommentReaction(CommentReaction reaction);
         Task SaveChangesAsync();
@@ -152,6 +154,13 @@ namespace backend.Repositories
                 .FirstOrDefaultAsync(r => r.MemoryId == memoryId && r.UserId == userId && r.EmojiType == emojiType);
         }
 
+        public async Task<List<Reaction>> GetUserReactionsOnMemoryAsync(Guid memoryId, Guid userId)
+        {
+            return await _context.Reactions
+                .Where(r => r.MemoryId == memoryId && r.UserId == userId)
+                .ToListAsync();
+        }
+
         public async Task AddReactionAsync(Reaction reaction)
         {
             await _context.Reactions.AddAsync(reaction);
@@ -168,11 +177,17 @@ namespace backend.Repositories
             await _context.SaveChangesAsync();
         }
 
-        // ─── Comment Reactions ───
         public async Task<CommentReaction?> GetCommentReactionAsync(Guid commentId, Guid userId, string emojiType)
         {
             return await _context.CommentReactions
                 .FirstOrDefaultAsync(r => r.CommentId == commentId && r.UserId == userId && r.EmojiType == emojiType);
+        }
+
+        public async Task<List<CommentReaction>> GetUserReactionsOnCommentAsync(Guid commentId, Guid userId)
+        {
+            return await _context.CommentReactions
+                .Where(r => r.CommentId == commentId && r.UserId == userId)
+                .ToListAsync();
         }
 
         public async Task AddCommentReactionAsync(CommentReaction reaction)
