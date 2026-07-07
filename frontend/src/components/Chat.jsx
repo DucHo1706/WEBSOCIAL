@@ -428,25 +428,29 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
               </div>
             )}
 
-            <div className="flex gap-2">
-              <div className="flex bg-card-custom border border-custom rounded-full px-2 items-center gap-1.5 shrink-0 shadow-xs">
-                {["❤️", "🔥", "🎉", "😆"].map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => triggerEmojiFloat(emoji)}
-                    className="w-8 h-8 flex items-center justify-center text-lg active:scale-125 transition-transform cursor-pointer"
-                  >
-                    {emoji}
-                  </button>
-                ))}
+            <div className="flex flex-col gap-1.5">
+              {/* Floating Quick Emojis row above input */}
+              <div className="flex justify-start">
+                <div className="flex bg-card-custom border border-custom rounded-full px-2 py-0.5 items-center gap-1.5 shadow-xs">
+                  {["❤️", "🔥", "🎉", "😆"].map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => triggerEmojiFloat(emoji)}
+                      className="w-7 h-7 flex items-center justify-center text-base active:scale-125 transition-transform cursor-pointer"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <form onSubmit={handleSend} className="flex-1 flex gap-1.5 bg-card-custom border border-custom rounded-full px-3 py-1.5 items-center shadow-xs">
+              {/* Chat Input form */}
+              <form onSubmit={handleSend} className="w-full flex gap-1.5 bg-card-custom border border-custom rounded-full px-3 py-1.5 items-center shadow-xs">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current.click()}
-                  className="p-1 text-stone-450 hover:text-stone-650 active:scale-95 cursor-pointer"
+                  className="p-1 text-stone-450 hover:text-stone-650 active:scale-95 cursor-pointer shrink-0"
                 >
                   <Image size={18} />
                 </button>
@@ -456,13 +460,13 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                   placeholder="Nhập tin nhắn..."
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  className="flex-1 border-none focus:outline-none text-xs text-stone-900 px-1 placeholder-stone-400 bg-transparent"
+                  className="flex-1 min-w-0 border-none focus:outline-none text-xs text-stone-900 px-1 placeholder-stone-400 bg-transparent"
                 />
 
                 <button
                   type="submit"
                   disabled={loading || (!text.trim() && !selectedImage)}
-                  className="p-1.5 bg-coral-500 hover:bg-coral-600 disabled:opacity-50 text-white rounded-full flex items-center justify-center active:scale-95 cursor-pointer shadow-md shadow-coral-500/10"
+                  className="p-1.5 bg-coral-500 hover:bg-coral-600 disabled:opacity-50 text-white rounded-full flex items-center justify-center active:scale-95 cursor-pointer shadow-md shadow-coral-500/10 shrink-0"
                 >
                   <PaperPlaneRight size={14} weight="fill" />
                 </button>
