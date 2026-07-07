@@ -11,10 +11,12 @@ namespace backend.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly ImgBbService _imgBbService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, ImgBbService imgBbService)
         {
             _authService = authService;
+            _imgBbService = imgBbService;
         }
 
         [HttpPost("register")]
@@ -56,13 +58,32 @@ namespace backend.Controllers
         [HttpPost("update")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
-            var user = await _authService.UpdateProfileAsync(request.UserId, request.Username, request.AvatarUrl);
+            var user = await _authService.UpdateProfileAsync(request.UserId, request.Username, request.AvatarUrl, request.CoverImageUrl, request.Bio);
             if (user == null)
             {
                 return NotFound(new { message = "User not found." });
             }
 
             return Ok(user);
+        }
+
+        [HttpPost("upload-image")]
+        public async Task<IActionResult> UploadProfileImage(IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { message = "No file uploaded." });
+                }
+
+                var url = await _imgBbService.UploadImageAsync(file);
+                return Ok(new { url });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 
@@ -85,5 +106,7 @@ namespace backend.Controllers
         public Guid UserId { get; set; }
         public string? Username { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? CoverImageUrl { get; set; }
+        public string? Bio { get; set; }
     }
 }

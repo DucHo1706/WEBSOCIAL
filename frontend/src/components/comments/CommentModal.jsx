@@ -41,20 +41,27 @@ export default function CommentModal({ memory, comments, user, onClose, onAddCom
                   isReply={false}
                 />
                 {/* Nested replies */}
-                {comment.Replies?.length > 0 && comment.Replies.map(reply => (
-                  <CommentItem
-                    key={reply.CommentId}
-                    comment={reply}
-                    user={user}
-                    onEdit={onEditComment}
-                    onDelete={(id) => onDeleteComment(id)}
-                    onPinToggle={onPinToggle}
-                    onReact={onReact}
-                    onReply={onReply}
-                    getRelativeTime={getRelativeTime}
-                    isReply={true}
-                  />
-                ))}
+                {comment.Replies?.length > 0 && (
+                  <div className="relative pl-4 ml-3.5 border-l border-stone-200 dark:border-stone-800 space-y-1.5 mt-1">
+                    {comment.Replies.map(reply => (
+                      <div key={reply.CommentId} className="relative">
+                        {/* Hook/elbow line connector */}
+                        <div className="absolute left-[-16px] top-4 w-3.5 h-[1px] bg-stone-250 dark:bg-stone-850"></div>
+                        <CommentItem
+                          comment={reply}
+                          user={user}
+                          onEdit={onEditComment}
+                          onDelete={(id) => onDeleteComment(id)}
+                          onPinToggle={onPinToggle}
+                          onReact={onReact}
+                          onReply={onReply}
+                          getRelativeTime={getRelativeTime}
+                          isReply={true}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))
           )}

@@ -1,12 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { apiRequest, getApiUrl } from "../api";
 import { Calendar, UserCircle, PencilSimple, Check, X, SignOut, Smiley, Clock, Camera, ChatCircle, Heart, UserPlus, Users, PaperPlaneRight } from "@phosphor-icons/react";
 
 export default function Profile({ user, memories, onProfileUpdated, onLogout }) {
   const [isEditing, setIsEditing] = useState(false);
   const [newUsername, setNewUsername] = useState(user.Username);
-  const [newAvatar, setNewAvatar] = useState(user.AvatarUrl);
+  const [newAvatar, setNewAvatar] = useState(user.AvatarUrl || "");
+  const [newCover, setNewCover] = useState(user.CoverImageUrl || "");
+  const [newBio, setNewBio] = useState(user.Bio || "");
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Friend count state
+  const [friendsCount, setFriendsCount] = useState(0);
 
   // Activity Log States
   const [showLogs, setShowLogs] = useState(false);
@@ -14,6 +22,52 @@ export default function Profile({ user, memories, onProfileUpdated, onLogout }) 
 
   // Filter memories to show only posts by this user (Personal profile timeline!)
   const myMemories = memories.filter(m => m.UserId === user.UserId);
+
+  useEffect(() => {
+    const fetchFriends = async () => {
+      try {
+        const data = await apiRequest(`/api/friendship/friends/${user.UserId}`);
+        setFriendsCount(data ? data.length : 0);
+      } catch (err) {
+        console.error("Lỗi tải danh sách bạn bè:", err);
+      }
+    };
+    fetchFriends();
+  }, [user.UserId]);
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const data = await apiRequest("/api/auth/upload-image", "POST", formData, true);
+      setNewAvatar(data.url);
+    } catch (err) {
+      alert("Tải ảnh đại diện lên thất bại: " + err.message);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const data = await apiRequest("/api/auth/upload-image", "POST", formData, true);
+      setNewCover(data.url);
+    } catch (err) {
+      alert("Tải ảnh bìa lên thất bại: " + err.message);
+    } finally {
+      setUploadingCover(false);
+    }
+  };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -24,7 +78,9 @@ export default function Profile({ user, memories, onProfileUpdated, onLogout }) 
       const updatedUser = await apiRequest("/api/auth/update", "POST", {
         userId: user.UserId,
         username: newUsername.trim(),
-        avatarUrl: newAvatar.trim()
+        avatarUrl: newAvatar.trim(),
+        coverImageUrl: newCover.trim(),
+        bio: newBio.trim()
       });
 
       // Update state in App.jsx
@@ -59,79 +115,170 @@ export default function Profile({ user, memories, onProfileUpdated, onLogout }) 
       <h2 className="font-display text-2xl font-bold text-stone-900 mb-4">Trang Cá Nhân</h2>
 
       {/* User Info Card */}
-      <div className="bg-white border border-stone-100 rounded-3xl p-5 shadow-xs mb-6 text-center relative overflow-hidden">
-        {!isEditing ? (
-          <div className="space-y-3">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="absolute top-4 right-4 p-2 text-stone-400 hover:text-coral-500 hover:bg-stone-50 rounded-xl transition-colors cursor-pointer"
-            >
-              Hiệu chỉnh
-            </button>
-
+      <div className="bg-white border border-stone-150 rounded-3xl overflow-hidden shadow-sm mb-6 relative">
+        {/* Cover Photo */}
+        <div className="h-32 w-full relative bg-gradient-to-r from-coral-400 to-amber-300">
+          {user.CoverImageUrl && (
             <img
-              src={user.AvatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.Username}`}
-              alt={user.Username}
-              className="w-18 h-18 rounded-full mx-auto border-2 border-coral-500 p-0.5 bg-white"
+              src={user.CoverImageUrl}
+              alt="Cover"
+              className="w-full h-full object-cover"
             />
-            <div>
-              <h3 className="font-display text-lg font-bold text-stone-900">{user.Username}</h3>
-              <p className="text-xs text-stone-450 mt-0.5">{user.Email}</p>
-            </div>
+          )}
+        </div>
 
-            <button
-              onClick={fetchLogs}
-              className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 mt-1 shadow-xs"
-            >
-              <Clock size={14} /> Nhật ký hoạt động
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleUpdate} className="space-y-4 text-left">
-            <div>
-              <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Tên tài khoản</label>
-              <input
-                type="text"
-                required
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-xs bg-stone-50 text-stone-900"
-              />
-            </div>
+        {/* Avatar overlapping Cover Photo */}
+        <div className="relative -mt-10 flex justify-center">
+          <img
+            src={user.AvatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.Username}`}
+            alt={user.Username}
+            className="w-20 h-20 rounded-full border-4 border-white bg-white shadow-md object-cover"
+          />
+        </div>
 
-            <div>
-              <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Ảnh đại diện (URL)</label>
-              <input
-                type="text"
-                value={newAvatar}
-                onChange={(e) => setNewAvatar(e.target.value)}
-                placeholder="https://..."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-xs bg-stone-50 text-stone-900"
-              />
-            </div>
+        <div className="p-5 pt-3 text-center space-y-3">
+          {!isEditing ? (
+            <>
+              <div>
+                <h3 className="font-display text-lg font-bold text-stone-900 leading-tight">{user.Username}</h3>
+                <p className="text-xs text-stone-400 mt-0.5">{user.Email}</p>
+                {user.Bio ? (
+                  <p className="text-xs text-stone-650 italic mt-2.5 px-4 leading-relaxed font-semibold">"{user.Bio}"</p>
+                ) : (
+                  <p className="text-[11px] text-stone-400 italic mt-2.5">Chưa có tiểu sử</p>
+                )}
+              </div>
 
-            <div className="flex gap-2 text-xs pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditing(false);
-                  setNewUsername(user.Username);
-                  setNewAvatar(user.AvatarUrl);
-                }}
-                className="flex-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-1"
-              >
-                <X size={14} /> Hủy
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 py-2 bg-coral-500 hover:bg-coral-600 text-white rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-coral-500/10"
-              >
-                <Check size={14} /> {loading ? "Lưu..." : "Lưu lại"}
-              </button>
-            </div>
-          </form>
-        )}
+              {/* Statistics Counters */}
+              <div className="flex justify-center gap-6 py-2.5 border-t border-b border-stone-100 mt-3 text-stone-600 text-[11px] font-bold">
+                <div className="text-center">
+                  <span className="block text-sm text-coral-500 font-display font-extrabold">{myMemories.length}</span>
+                  Kỷ niệm
+                </div>
+                <div className="w-[1px] bg-stone-100"></div>
+                <div className="text-center">
+                  <span className="block text-sm text-coral-500 font-display font-extrabold">{friendsCount}</span>
+                  Bạn bè
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-center pt-2">
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                >
+                  <PencilSimple size={14} /> Chỉnh sửa trang cá nhân
+                </button>
+                <button
+                  onClick={fetchLogs}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                >
+                  <Clock size={14} /> Nhật ký
+                </button>
+              </div>
+            </>
+          ) : (
+            <form onSubmit={handleUpdate} className="space-y-4 text-left pt-2">
+              <div>
+                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Tên tài khoản</label>
+                <input
+                  type="text"
+                  required
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-xs bg-stone-50 text-stone-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Tiểu sử</label>
+                <textarea
+                  value={newBio}
+                  onChange={(e) => setNewBio(e.target.value)}
+                  placeholder="Viết vài dòng giới thiệu về bản thân..."
+                  rows={2}
+                  maxLength={100}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-xs bg-stone-50 text-stone-900 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Ảnh đại diện</label>
+                <div className="flex gap-3 items-center mt-1.5">
+                  <img
+                    src={newAvatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${newUsername}`}
+                    alt="Preview"
+                    className="w-12 h-12 rounded-full border object-cover shrink-0"
+                  />
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      id="avatar-upload"
+                    />
+                    <label
+                      htmlFor="avatar-upload"
+                      className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold cursor-pointer transition-all border border-stone-200 inline-block"
+                    >
+                      {uploadingAvatar ? "Đang tải lên..." : "Chọn ảnh đại diện"}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Ảnh bìa</label>
+                <div className="mt-1.5 space-y-2">
+                  {newCover && (
+                    <div className="h-20 w-full rounded-xl overflow-hidden border">
+                      <img src={newCover} alt="Cover Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCoverUpload}
+                      className="hidden"
+                      id="cover-upload"
+                    />
+                    <label
+                      htmlFor="cover-upload"
+                      className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold cursor-pointer transition-all border border-stone-200 inline-block"
+                    >
+                      {uploadingCover ? "Đang tải lên..." : "Chọn ảnh bìa"}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 text-xs pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setNewUsername(user.Username);
+                    setNewAvatar(user.AvatarUrl || "");
+                    setNewCover(user.CoverImageUrl || "");
+                    setNewBio(user.Bio || "");
+                  }}
+                  className="flex-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <X size={14} /> Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || uploadingAvatar || uploadingCover}
+                  className="flex-1 py-2 bg-coral-500 hover:bg-coral-600 text-white rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-coral-500/10"
+                >
+                  <Check size={14} /> {loading ? "Lưu..." : "Lưu lại"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
 
       {/* User's Own Posts Feed (Facebook Profile style) */}

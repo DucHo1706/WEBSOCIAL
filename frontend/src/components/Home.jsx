@@ -540,18 +540,43 @@ export default function Home({ user, group, recentMemories, onNewMemoryAdded, on
 
     setLoadingComments(true);
     try {
-      const data = await apiRequest("/api/memory/comment", "POST", {
+      const parentId = replyToComment?.memoryId === memoryId ? replyToComment.comment.CommentId : null;
+      
+      const payload = {
         memoryId,
         userId: user.UserId,
         text: text.trim()
-      });
+      };
+      if (parentId) {
+        payload.parentCommentId = parentId;
+      }
+
+      const data = await apiRequest("/api/memory/comment", "POST", payload);
       
       // Update memory in local list
       const existingMemory = recentMemories.find(m => m.MemoryId === memoryId);
       if (existingMemory) {
+        let updatedComments = [...(existingMemory.Comments || [])];
+        if (parentId) {
+          const addReply = (list) => {
+            return list.map(c => {
+              if (c.CommentId === parentId) {
+                return { ...c, Replies: [...(c.Replies || []), data] };
+              }
+              if (c.Replies && c.Replies.length > 0) {
+                return { ...c, Replies: addReply(c.Replies) };
+              }
+              return c;
+            });
+          };
+          updatedComments = addReply(updatedComments);
+        } else {
+          updatedComments.push(data);
+        }
+        
         onNewMemoryAdded({
           ...existingMemory,
-          Comments: [...(existingMemory.Comments || []), data]
+          Comments: updatedComments
         });
       }
 
@@ -936,6 +961,7 @@ export default function Home({ user, group, recentMemories, onNewMemoryAdded, on
           storyGroups={stories}
           initialGroupIndex={activeStoryGroupIdx}
           onClose={() => setActiveStoryGroupIdx(null)}
+          onStoryDeleted={fetchStories}
         />
       )}
 

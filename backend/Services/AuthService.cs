@@ -11,7 +11,7 @@ namespace backend.Services
     {
         Task<User?> RegisterAsync(string username, string email, string password, string? avatarUrl);
         Task<User?> LoginAsync(string email, string password);
-        Task<User?> UpdateProfileAsync(Guid userId, string? username, string? avatarUrl);
+        Task<User?> UpdateProfileAsync(Guid userId, string? username, string? avatarUrl, string? coverImageUrl, string? bio);
     }
 
     public class AuthService : IAuthService
@@ -66,7 +66,7 @@ namespace backend.Services
             return user;
         }
 
-        public async Task<User?> UpdateProfileAsync(Guid userId, string? username, string? avatarUrl)
+        public async Task<User?> UpdateProfileAsync(Guid userId, string? username, string? avatarUrl, string? coverImageUrl, string? bio)
         {
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null) return null;
@@ -80,6 +80,10 @@ namespace backend.Services
             {
                 user.AvatarUrl = avatarUrl.Trim();
             }
+
+            // Map Cover Image and Bio (allow setting empty or new value)
+            user.CoverImageUrl = coverImageUrl?.Trim();
+            user.Bio = bio?.Trim();
 
             await _userRepository.SaveChangesAsync();
 

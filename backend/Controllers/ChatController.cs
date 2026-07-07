@@ -104,6 +104,24 @@ namespace backend.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpPost("recall/{messageId}")]
+        public async Task<IActionResult> RecallMessage(Guid messageId, [FromQuery] Guid userId)
+        {
+            try
+            {
+                var success = await _chatService.RecallMessageAsync(messageId, userId);
+                if (success)
+                {
+                    return Ok(new { message = "Tin nhắn đã được thu hồi." });
+                }
+                return BadRequest(new { message = "Không thể thu hồi tin nhắn." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 
     public class CreateGroupChatDto

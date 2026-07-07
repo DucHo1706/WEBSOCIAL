@@ -17,7 +17,7 @@ namespace backend.Services
         Task<Memory> UpdateMemoryAsync(Guid memoryId, Guid userId, string? caption, string? category, string? privacy, List<string>? newImageUrls = null);
         Task DeleteMemoryAsync(Guid memoryId, Guid userId);
         Task<Memory> ShareMemoryAsync(Guid userId, Guid originalMemoryId, string? caption);
-        Task<CommentResponseDto> AddCommentAsync(Guid memoryId, Guid userId, string text);
+        Task<CommentResponseDto> AddCommentAsync(Guid memoryId, Guid userId, string text, Guid? parentCommentId = null);
         Task<CommentResponseDto> UpdateCommentAsync(Guid commentId, Guid userId, string text);
         Task DeleteCommentAsync(Guid commentId, Guid userId);
         Task<ReactionResponseDto> ToggleReactionAsync(Guid memoryId, Guid userId, string emojiType);
@@ -252,6 +252,7 @@ namespace backend.Services
                     CommentId = c.CommentId,
                     MemoryId = c.MemoryId,
                     UserId = c.UserId,
+                    ParentCommentId = c.ParentCommentId,
                     Text = c.Text,
                     CreatedAt = c.CreatedAt,
                     EditedAt = c.EditedAt,
@@ -262,6 +263,7 @@ namespace backend.Services
                         CommentId = r.CommentId,
                         MemoryId = r.MemoryId,
                         UserId = r.UserId,
+                        ParentCommentId = r.ParentCommentId,
                         Text = r.Text,
                         CreatedAt = r.CreatedAt,
                         EditedAt = r.EditedAt,
@@ -294,7 +296,7 @@ namespace backend.Services
             }).ToList();
         }
 
-        public async Task<CommentResponseDto> AddCommentAsync(Guid memoryId, Guid userId, string text)
+        public async Task<CommentResponseDto> AddCommentAsync(Guid memoryId, Guid userId, string text, Guid? parentCommentId = null)
         {
             if (string.IsNullOrWhiteSpace(text)) throw new Exception("Comment cannot be empty.");
             var user = await _userRepository.GetByIdAsync(userId);
@@ -307,7 +309,8 @@ namespace backend.Services
             {
                 MemoryId = memoryId,
                 UserId = userId,
-                Text = text.Trim()
+                Text = text.Trim(),
+                ParentCommentId = parentCommentId
             };
 
             await _memoryRepository.AddCommentAsync(comment);
@@ -332,6 +335,7 @@ namespace backend.Services
             {
                 CommentId = comment.CommentId,
                 MemoryId = comment.MemoryId,
+                ParentCommentId = comment.ParentCommentId,
                 Text = comment.Text,
                 CreatedAt = comment.CreatedAt,
                 User = new MemoryUserDto { UserId = user.UserId, Username = user.Username, AvatarUrl = user.AvatarUrl }
@@ -528,6 +532,7 @@ namespace backend.Services
         public Guid CommentId { get; set; }
         public Guid MemoryId { get; set; }
         public Guid UserId { get; set; }
+        public Guid? ParentCommentId { get; set; }
         public string Text { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public DateTime? EditedAt { get; set; }

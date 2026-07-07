@@ -30,6 +30,14 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
     loadFriends();
   }, []);
 
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setOpenMsgMenuId(null);
+    };
+    window.addEventListener("click", handleGlobalClick);
+    return () => window.removeEventListener("click", handleGlobalClick);
+  }, []);
+
   // Poll for messages or when active conversation changes
   useEffect(() => {
     if (!activeConv) return;
@@ -66,10 +74,18 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
       }
     };
 
+    const handleMessageRecalled = (recalledMsgId) => {
+      setMessages(prev =>
+        prev.map(m => m.ChatMessageId === recalledMsgId ? { ...m, IsDeleted: true } : m)
+      );
+    };
+
     connection.on("OnNewMessage", handleIncomingMessage);
+    connection.on("OnMessageRecalled", handleMessageRecalled);
 
     return () => {
       connection.off("OnNewMessage", handleIncomingMessage);
+      connection.off("OnMessageRecalled", handleMessageRecalled);
     };
   }, [connection, activeConv]);
 
@@ -165,7 +181,18 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
       setLoading(false);
     }
   };
-
+  const handleRecall = async (messageId) => {
+    if (!window.confirm("Bạn có chắc chắn muốn thu hồi tin nhắn này không?")) return;
+    try {
+      await apiRequest(`/api/chat/recall/${messageId}?userId=${user.UserId}`, "POST");
+      setMessages(prev =>
+        prev.map(m => m.ChatMessageId === messageId ? { ...m, IsDeleted: true } : m)
+      );
+      setOpenMsgMenuId(null);
+    } catch (err) {
+      alert("Thu hồi tin nhắn thất bại: " + err.message);
+    }
+  };
   const handleCreateGroupChat = async (e) => {
     e.preventDefault();
     if (!newGroupName.trim() || selectedFriends.length === 0) {
@@ -366,36 +393,70 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                           {msg.ReplyToText}
                         </div>
                       )}
-                      <div className="relative group">
+                      <div className="relative group cursor-pointer" onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMsgMenuId(openMsgMenuId === msg.ChatMessageId ? null : msg.ChatMessageId);
+                      }}>
                         <div
                           className={`rounded-2xl p-3 text-xs leading-relaxed ${
-                            isSelf
-                              ? "bg-coral-500 text-white rounded-br-xs"
-                              : "bg-card-custom border border-custom text-app rounded-bl-xs shadow-xs"
+                            msg.IsDeleted
+                              ? "bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700 rounded-xl italic"
+                              : isSelf
+                                ? "bg-coral-500 text-white rounded-br-xs"
+                                : "bg-card-custom border border-custom text-app rounded-bl-xs shadow-xs"
                           }`}
                         >
-                          {msg.ImageUrl && (
-                            <div className="rounded-xl overflow-hidden mb-1.5 max-w-[200px] border border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-850">
-                              <img
-                                src={getApiUrl(msg.ImageUrl)}
-                                alt="Gửi ảnh"
-                                className="max-w-full max-h-[160px] object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => window.open(getApiUrl(msg.ImageUrl), '_blank')}
-                              />
-                            </div>
+                          {msg.IsDeleted ? (
+                            <p className="flex items-center gap-1.5"><span className="text-[10px]">🚫</span> Tin nhắn đã bị thu hồi</p>
+                          ) : (
+                            <>
+                              {msg.ImageUrl && (
+                                <div className="rounded-xl overflow-hidden mb-1.5 max-w-[200px] border border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-850">
+                                  <img
+                                    src={getApiUrl(msg.ImageUrl)}
+                                    alt="Gửi ảnh"
+                                    className="max-w-full max-h-[160px] object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      window.open(getApiUrl(msg.ImageUrl), '_blank');
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              {msg.MessageText && <p>{msg.MessageText}</p>}
+                            </>
                           )}
-                          {msg.MessageText && <p>{msg.MessageText}</p>}
                         </div>
-                        {/* ... menu button appears on hover */}
-                        <div className={`absolute top-0 ${isSelf ? "left-0 -translate-x-full pl-1" : "right-0 translate-x-full pr-1"} opacity-0 group-hover:opacity-100 transition-opacity`}>
-                          <button
-                            onClick={() => setReplyToMsg(replyToMsg?.ChatMessageId === msg.ChatMessageId ? null : msg)}
-                            className="w-6 h-6 rounded-full bg-card-custom border border-custom shadow-md flex items-center justify-center text-[9px] text-secondary-custom hover:text-coral-500 cursor-pointer"
-                            title="Phản hồi"
-                          >
-                            ↩
-                          </button>
-                        </div>
+                        {/* Menu button: shown on hover or when message is clicked/tapped */}
+                        {!msg.IsDeleted && (
+                          <div className={`absolute top-1/2 -translate-y-1/2 ${isSelf ? "left-0 -translate-x-full pl-2" : "right-0 translate-x-full pr-2"} flex gap-1.5 items-center ${openMsgMenuId === msg.ChatMessageId ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity duration-150 z-20`}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setReplyToMsg(replyToMsg?.ChatMessageId === msg.ChatMessageId ? null : msg);
+                                setOpenMsgMenuId(null);
+                              }}
+                              className="w-6 h-6 rounded-full bg-card-custom border border-custom shadow-md flex items-center justify-center text-[10px] text-secondary-custom hover:text-coral-500 cursor-pointer active:scale-90"
+                              title="Phản hồi"
+                            >
+                              ↩
+                            </button>
+                            {isSelf && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRecall(msg.ChatMessageId);
+                                }}
+                                className="w-6 h-6 rounded-full bg-card-custom border border-rose-200 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-md flex items-center justify-center text-[10px] cursor-pointer active:scale-90"
+                                title="Thu hồi tin nhắn"
+                              >
+                                🗑️
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

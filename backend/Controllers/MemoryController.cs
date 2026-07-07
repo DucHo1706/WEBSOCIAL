@@ -195,7 +195,7 @@ namespace backend.Controllers
 
             try
             {
-                var responseComment = await _memoryService.AddCommentAsync(dto.MemoryId, dto.UserId, dto.Text);
+                var responseComment = await _memoryService.AddCommentAsync(dto.MemoryId, dto.UserId, dto.Text, dto.ParentCommentId);
                 return Ok(responseComment);
             }
             catch (Exception ex)
@@ -288,6 +288,7 @@ namespace backend.Controllers
     {
         public Guid MemoryId { get; set; }
         public Guid UserId { get; set; }
+        public Guid? ParentCommentId { get; set; }
         public string Text { get; set; } = string.Empty;
     }
 

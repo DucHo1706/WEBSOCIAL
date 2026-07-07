@@ -16,6 +16,7 @@ namespace backend.Services
         Task AddStoryReactionAsync(Guid storyId, Guid userId, string emojiType);
         Task<List<StoryReactionResponseDto>> GetReactionsForStoryAsync(Guid storyId);
         Task SendStoryCommentAsync(Guid storyId, Guid userId, string text);
+        Task DeleteStoryAsync(Guid storyId);
     }
 
     public class StoryService : IStoryService
@@ -215,6 +216,11 @@ namespace backend.Services
                     $"đã phản hồi Tin của bạn: \"{(text.Length > 25 ? text.Substring(0, 22) + "..." : text)}\""
                 );
             }
+        }
+
+        public async Task DeleteStoryAsync(Guid storyId)
+        {
+            await _storyRepository.DeleteStoryAsync(storyId);
         }
     }
 

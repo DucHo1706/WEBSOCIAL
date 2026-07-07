@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { apiRequest, getApiUrl } from "../api";
 import { X, CaretLeft, CaretRight, PaperPlaneRight, Heart } from "@phosphor-icons/react";
 
-export default function StoryViewer({ user, storyGroups, initialGroupIndex, onClose }) {
+export default function StoryViewer({ user, storyGroups, initialGroupIndex, onClose, onStoryDeleted }) {
   const [groupIndex, setGroupIndex] = useState(initialGroupIndex);
   const [itemIndex, setItemIndex] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -146,6 +146,27 @@ export default function StoryViewer({ user, storyGroups, initialGroupIndex, onCl
     }
   };
 
+  const handleDeleteStory = async () => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa tin này không?")) return;
+    
+    // Pause autoplay
+    setIsPaused(true);
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    
+    try {
+      await apiRequest(`/api/story/${currentStory.StoryId}`, "DELETE");
+      alert("Đã xóa tin thành công!");
+      if (onStoryDeleted) {
+        onStoryDeleted();
+      }
+      onClose();
+    } catch (err) {
+      alert("Không thể xóa tin: " + err.message);
+      setIsPaused(false);
+    }
+  };
+
   // Group reactions by emoji for display
   const groupedReactions = reactions.reduce((acc, r) => {
     acc[r.EmojiType] = (acc[r.EmojiType] || []).concat(r);
@@ -192,12 +213,22 @@ export default function StoryViewer({ user, storyGroups, initialGroupIndex, onCl
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white cursor-pointer"
-            >
-              <X size={16} weight="bold" />
-            </button>
+            <div className="flex items-center gap-2">
+              {isOwnStory && (
+                <button
+                  onClick={handleDeleteStory}
+                  className="px-2.5 py-1.5 text-[9px] font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-rose-600/10 shrink-0"
+                >
+                  Xóa Tin
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white cursor-pointer"
+              >
+                <X size={16} weight="bold" />
+              </button>
+            </div>
           </div>
         </div>
 

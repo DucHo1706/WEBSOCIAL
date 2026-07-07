@@ -17,6 +17,7 @@ namespace backend.Repositories
         Task AddGroupChatAsync(GroupChat groupChat);
         Task AddGroupChatMemberAsync(GroupChatMember member);
         Task AddChatMessageAsync(ChatMessage message);
+        Task<ChatMessage?> GetMessageByIdAsync(Guid messageId);
         Task SaveChangesAsync();
     }
 
@@ -33,7 +34,6 @@ namespace backend.Repositories
         {
             return await _context.ChatMessages
                 .Include(cm => cm.User)
-                .Where(cm => !cm.IsDeleted)
                 .Where(cm => (cm.UserId == userId1 && cm.ReceiverId == userId2) ||
                              (cm.UserId == userId2 && cm.ReceiverId == userId1))
                 .OrderBy(cm => cm.CreatedAt)
@@ -44,7 +44,6 @@ namespace backend.Repositories
         {
             return await _context.ChatMessages
                 .Include(cm => cm.User)
-                .Where(cm => !cm.IsDeleted)
                 .Where(cm => cm.GroupChatId == groupChatId)
                 .OrderBy(cm => cm.CreatedAt)
                 .ToListAsync();
@@ -76,6 +75,11 @@ namespace backend.Repositories
         public async Task AddChatMessageAsync(ChatMessage message)
         {
             await _context.ChatMessages.AddAsync(message);
+        }
+
+        public async Task<ChatMessage?> GetMessageByIdAsync(Guid messageId)
+        {
+            return await _context.ChatMessages.FindAsync(messageId);
         }
 
         public async Task SaveChangesAsync()

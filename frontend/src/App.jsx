@@ -184,11 +184,40 @@ export default function App() {
 
     const handleNewComment = (comment) => {
       setMemories(prev => prev.map(m => {
-        if (m.MemoryId === comment.MemoryId) {
-          const updatedComments = m.Comments ? [...m.Comments, comment] : [comment];
-          return { ...m, Comments: updatedComments };
+        if (m.MemoryId !== comment.MemoryId) return m;
+
+        let updatedComments = m.Comments ? [...m.Comments] : [];
+
+        // Avoid duplicate additions
+        const checkExists = (list) => {
+          return list.some(c => c.CommentId === comment.CommentId || (c.Replies && checkExists(c.Replies)));
+        };
+        if (checkExists(updatedComments)) {
+          return m;
         }
-        return m;
+
+        if (comment.ParentCommentId) {
+          const addReply = (list) => {
+            return list.map(c => {
+              if (c.CommentId === comment.ParentCommentId) {
+                const replies = c.Replies ? [...c.Replies] : [];
+                if (!replies.some(r => r.CommentId === comment.CommentId)) {
+                  replies.push(comment);
+                }
+                return { ...c, Replies: replies };
+              }
+              if (c.Replies && c.Replies.length > 0) {
+                return { ...c, Replies: addReply(c.Replies) };
+              }
+              return c;
+            });
+          };
+          updatedComments = addReply(updatedComments);
+        } else {
+          updatedComments.push(comment);
+        }
+
+        return { ...m, Comments: updatedComments };
       }));
     };
 

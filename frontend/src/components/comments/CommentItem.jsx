@@ -15,7 +15,7 @@ export default function CommentItem({ comment, user, onEdit, onDelete, onPinTogg
   };
 
   return (
-    <div className={`flex gap-2 items-start text-[11px] ${isReply ? 'ml-7 mt-2' : 'bg-stone-50/50 dark:bg-[#1C1C1E]'} p-2 rounded-xl`}>
+    <div className={`flex gap-2 items-start text-[11px] ${isReply ? 'mt-1 pl-1 bg-stone-50/20 dark:bg-[#1C1C1E]/20' : 'bg-stone-50/50 dark:bg-[#1C1C1E]'} p-2 rounded-xl`}>
       <img
         src={comment.User?.AvatarUrl}
         alt={comment.User?.Username}
@@ -32,7 +32,7 @@ export default function CommentItem({ comment, user, onEdit, onDelete, onPinTogg
         ) : (
           <>
             <div className="flex justify-between items-center mb-0.5 gap-1">
-              <span className={`font-bold text-stone-850 dark:text-stone-850 truncate ${isReply ? 'text-[10px]' : ''}`}>{comment.User?.Username}</span>
+              <span className={`font-bold text-stone-800 dark:text-stone-300 truncate ${isReply ? 'text-[10px]' : ''}`}>{comment.User?.Username}</span>
               <div className="flex items-center gap-1 shrink-0">
                 <span className="text-[8px] text-stone-400">{getRelativeTime(comment.CreatedAt)}</span>
                 <div className="relative">

@@ -101,6 +101,20 @@ namespace backend.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        // DELETE /api/story/{storyId}
+        [HttpDelete("{storyId}")]
+        public async Task<IActionResult> DeleteStory(Guid storyId)
+        {
+            try
+            {
+                await _storyService.DeleteStoryAsync(storyId);
+                return Ok(new { message = "Đã xóa tin thành công." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 
     public class UploadStoryDto

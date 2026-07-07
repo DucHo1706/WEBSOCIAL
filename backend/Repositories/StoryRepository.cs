@@ -15,6 +15,7 @@ namespace backend.Repositories
         Task<Story?> GetStoryByIdAsync(Guid storyId);
         Task UpsertReactionAsync(Guid storyId, Guid userId, string emojiType);
         Task<List<StoryReaction>> GetReactionsForStoryAsync(Guid storyId);
+        Task DeleteStoryAsync(Guid storyId);
         Task SaveChangesAsync();
     }
 
@@ -78,6 +79,18 @@ namespace backend.Repositories
                 .Where(sr => sr.StoryId == storyId)
                 .OrderByDescending(sr => sr.CreatedAt)
                 .ToListAsync();
+        }
+
+        public async Task DeleteStoryAsync(Guid storyId)
+        {
+            var story = await _context.Stories.FindAsync(storyId);
+            if (story != null)
+            {
+                var reactions = _context.StoryReactions.Where(sr => sr.StoryId == storyId);
+                _context.StoryReactions.RemoveRange(reactions);
+                _context.Stories.Remove(story);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task SaveChangesAsync()

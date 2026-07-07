@@ -16,6 +16,7 @@ namespace backend.Services
         Task<List<ChatMessageResponseDto>> GetGroupChatHistoryAsync(Guid groupChatId);
         Task<GroupChat> CreateGroupChatAsync(string groupName, List<Guid> memberIds);
         Task<ChatMessageResponseDto> SaveChatMessageAsync(Guid userId, Guid? receiverId, Guid? groupChatId, string? messageText, string? imageUrl, Guid? replyToMessageId = null, string? replyToText = null);
+        Task<bool> RecallMessageAsync(Guid messageId, Guid userId);
     }
 
     public class ChatService : IChatService
@@ -72,7 +73,8 @@ namespace backend.Services
                 ReplyToMessageId = cm.ReplyToMessageId,
                 ReplyToText = cm.ReplyToText,
                 ReactionsJson = cm.ReactionsJson,
-                IsPinned = cm.IsPinned
+                IsPinned = cm.IsPinned,
+                IsDeleted = cm.IsDeleted
             }).ToList();
         }
 
@@ -97,7 +99,8 @@ namespace backend.Services
                 ReplyToMessageId = cm.ReplyToMessageId,
                 ReplyToText = cm.ReplyToText,
                 ReactionsJson = cm.ReactionsJson,
-                IsPinned = cm.IsPinned
+                IsPinned = cm.IsPinned,
+                IsDeleted = cm.IsDeleted
             }).ToList();
         }
 
@@ -171,7 +174,8 @@ namespace backend.Services
                 ReplyToMessageId = message.ReplyToMessageId,
                 ReplyToText = message.ReplyToText,
                 ReactionsJson = message.ReactionsJson,
-                IsPinned = message.IsPinned
+                IsPinned = message.IsPinned,
+                IsDeleted = message.IsDeleted
             };
 
             // Log activity
@@ -199,6 +203,23 @@ namespace backend.Services
 
             return dto;
         }
+
+        public async Task<bool> RecallMessageAsync(Guid messageId, Guid userId)
+        {
+            var message = await _chatRepository.GetMessageByIdAsync(messageId);
+            if (message == null || message.UserId != userId) return false;
+
+            message.IsDeleted = true;
+            message.DeletedAt = DateTime.UtcNow;
+            await _chatRepository.SaveChangesAsync();
+
+            // Broadcast the recall event via SignalR so other clients remove/update it in real-time
+            var targetId = message.GroupChatId.HasValue ? message.GroupChatId.Value.ToString() : message.ReceiverId.Value.ToString();
+            await _hubContext.Clients.Group(targetId).SendAsync("OnMessageRecalled", messageId);
+            await _hubContext.Clients.Group(message.UserId.ToString()).SendAsync("OnMessageRecalled", messageId);
+
+            return true;
+        }
     }
 
     public class ConversationDto
@@ -223,8 +244,9 @@ namespace backend.Services
         public DateTime CreatedAt { get; set; }
         public Guid? ReplyToMessageId { get; set; }
         public string? ReplyToText { get; set; }
-        public string ReactionsJson { get; set; } = "[]";
+            public string ReactionsJson { get; set; } = "[]";
         public bool IsPinned { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
     public class ChatUserDto
