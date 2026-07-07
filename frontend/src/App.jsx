@@ -17,13 +17,21 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [activeTab, setActiveTab] = useState("Home"); // Home, Friends, Notifications, Chat, Profile
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem("activeTab");
+    return saved || "Home";
+  });
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [memories, setMemories] = useState([]);
   const [chatMessages, setChatMessages] = useState([]); // Buffer for real-time messages
   const [onlineUsers, setOnlineUsers] = useState([]); // List of online userIds
   const [showRecap, setShowRecap] = useState(false);
   const [connection, setConnection] = useState(null);
+
+  // Sync activeTab to localStorage
+  useEffect(() => {
+    localStorage.setItem("activeTab", activeTab);
+  }, [activeTab]);
 
   // Search state
   const [showSearch, setShowSearch] = useState(false);
@@ -365,6 +373,7 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("activeTab");
     setUser(null);
   };
 
