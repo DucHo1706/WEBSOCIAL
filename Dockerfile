@@ -19,15 +19,11 @@ RUN dotnet publish -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# Install EF Core tools for migrations
-RUN dotnet tool install --global dotnet-ef
-ENV PATH="${PATH}:/root/.dotnet/tools"
-
 COPY --from=backend-builder /app/publish .
 # Copy frontend build into wwwroot
 COPY --from=frontend-builder /app/frontend/dist ./wwwroot
 
-# Expose port and start backend with auto-migration
+# Expose port and start backend (migration runs automatically at startup)
 EXPOSE 8080
 ENTRYPOINT ["sh", "-c"]
-CMD ["dotnet ef database update --project . && dotnet backend.dll --urls \"http://*:${PORT:-8080}\""]
+CMD ["dotnet backend.dll --urls \"http://*:${PORT:-8080}\""]
