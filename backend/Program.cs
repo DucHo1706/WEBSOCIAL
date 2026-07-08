@@ -135,11 +135,19 @@ app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api") &&
     });
 });
 
-// Auto-apply EF Core migrations on startup (replaces need for `dotnet ef database update` CLI)
-using (var scope = app.Services.CreateScope())
+// Auto-apply EF Core migrations on startup
+try
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Database.Migrate();
+    }
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning(ex, "Database migration failed, but app will still start.");
 }
 
 app.Run();
