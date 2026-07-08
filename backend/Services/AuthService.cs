@@ -11,7 +11,8 @@ namespace backend.Services
     {
         Task<User?> RegisterAsync(string username, string email, string password, string? avatarUrl);
         Task<User?> LoginAsync(string email, string password);
-        Task<User?> UpdateProfileAsync(Guid userId, string? username, string? avatarUrl, string? coverImageUrl, string? bio);
+        Task<User?> UpdateProfileAsync(Guid userId, string? username, string? avatarUrl, string? coverImageUrl, string? bio, string? nickname = null, string? location = null, DateTime? dateOfBirth = null, string? relationshipStatus = null, string? education = null);
+        Task<User?> GetPublicProfileAsync(Guid userId, Guid viewerId);
         Task<bool> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword);
     }
 
@@ -67,7 +68,7 @@ namespace backend.Services
             return user;
         }
 
-        public async Task<User?> UpdateProfileAsync(Guid userId, string? username, string? avatarUrl, string? coverImageUrl, string? bio)
+        public async Task<User?> UpdateProfileAsync(Guid userId, string? username, string? avatarUrl, string? coverImageUrl, string? bio, string? nickname = null, string? location = null, DateTime? dateOfBirth = null, string? relationshipStatus = null, string? education = null)
         {
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null) return null;
@@ -86,11 +87,29 @@ namespace backend.Services
             user.CoverImageUrl = coverImageUrl?.Trim();
             user.Bio = bio?.Trim();
 
+            // New fields
+            if (nickname != null) user.Nickname = nickname.Trim();
+            if (location != null) user.Location = location.Trim();
+            if (dateOfBirth.HasValue) user.DateOfBirth = dateOfBirth;
+            if (relationshipStatus != null) user.RelationshipStatus = relationshipStatus.Trim();
+            if (education != null) user.Education = education.Trim();
+
             await _userRepository.SaveChangesAsync();
 
             // Log activity
             await _activityLogRepository.LogActivityAsync(userId, "ProfileUpdate", "Đã cập nhật thông tin trang cá nhân.");
 
+            return user;
+        }
+
+        public async Task<User?> GetPublicProfileAsync(Guid userId, Guid viewerId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return null;
+
+            // TODO: Apply privacy filtering once privacy per-field is implemented.
+            // For now return full profile (owner + friends + public all see same).
+            // If blocked relationship exists, return null to simulate "not found".
             return user;
         }
 

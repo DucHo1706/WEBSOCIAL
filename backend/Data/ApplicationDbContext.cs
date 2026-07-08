@@ -25,6 +25,10 @@ namespace backend.Data
         public DbSet<Story> Stories { get; set; } = null!;
         public DbSet<StoryReaction> StoryReactions { get; set; } = null!;
         public DbSet<CommentReaction> CommentReactions { get; set; } = null!;
+        public DbSet<SavedPost> SavedPosts { get; set; } = null!;
+        public DbSet<HiddenPost> HiddenPosts { get; set; } = null!;
+        public DbSet<PostReport> PostReports { get; set; } = null!;
+        public DbSet<PostNotificationSetting> PostNotificationSettings { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -234,6 +238,85 @@ namespace backend.Data
                 .WithMany()
                 .HasForeignKey(sr => sr.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // ─── SavedPost (Bookmarks) ───
+            modelBuilder.Entity<SavedPost>()
+                .HasKey(sp => sp.SavedPostId);
+
+            modelBuilder.Entity<SavedPost>()
+                .HasOne(sp => sp.User)
+                .WithMany()
+                .HasForeignKey(sp => sp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SavedPost>()
+                .HasOne(sp => sp.Memory)
+                .WithMany(m => m.SavedByUsers)
+                .HasForeignKey(sp => sp.MemoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Prevent duplicate saves per user
+            modelBuilder.Entity<SavedPost>()
+                .HasIndex(sp => new { sp.UserId, sp.MemoryId })
+                .IsUnique();
+
+            // ─── HiddenPost ───
+            modelBuilder.Entity<HiddenPost>()
+                .HasKey(hp => hp.HiddenPostId);
+
+            modelBuilder.Entity<HiddenPost>()
+                .HasOne(hp => hp.User)
+                .WithMany()
+                .HasForeignKey(hp => hp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<HiddenPost>()
+                .HasOne(hp => hp.Memory)
+                .WithMany(m => m.HiddenByUsers)
+                .HasForeignKey(hp => hp.MemoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Prevent duplicate hides per user
+            modelBuilder.Entity<HiddenPost>()
+                .HasIndex(hp => new { hp.UserId, hp.MemoryId })
+                .IsUnique();
+
+            // ─── PostReport ───
+            modelBuilder.Entity<PostReport>()
+                .HasKey(r => r.ReportId);
+
+            modelBuilder.Entity<PostReport>()
+                .HasOne(r => r.Reporter)
+                .WithMany()
+                .HasForeignKey(r => r.ReporterId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PostReport>()
+                .HasOne(r => r.Memory)
+                .WithMany(m => m.Reports)
+                .HasForeignKey(r => r.MemoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ─── PostNotificationSetting ───
+            modelBuilder.Entity<PostNotificationSetting>()
+                .HasKey(s => s.SettingId);
+
+            modelBuilder.Entity<PostNotificationSetting>()
+                .HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PostNotificationSetting>()
+                .HasOne(s => s.Memory)
+                .WithMany(m => m.NotificationSettings)
+                .HasForeignKey(s => s.MemoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Prevent duplicate settings per user+post
+            modelBuilder.Entity<PostNotificationSetting>()
+                .HasIndex(s => new { s.UserId, s.MemoryId })
+                .IsUnique();
         }
     }
 }

@@ -14,7 +14,7 @@ export default function CommentModal({ memory, comments, user, onClose, onAddCom
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-card-custom rounded-3xl p-4 w-full max-w-sm shadow-2xl border border-custom max-h-[75vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-card-custom rounded-3xl p-4 w-full max-w-sm shadow-2xl border border-custom max-h-[70vh] h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3 pb-2 border-b border-custom">
           <h4 className="text-sm font-bold text-app">💬 Bình luận</h4>
           <button onClick={onClose} className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full cursor-pointer text-secondary-custom">

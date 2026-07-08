@@ -24,6 +24,17 @@ namespace backend.Services
         Task<ReactionResponseDto> ToggleCommentReactionAsync(Guid commentId, Guid userId, string emojiType);
         Task PinCommentAsync(Guid commentId, Guid userId);
         Task UnpinCommentAsync(Guid commentId, Guid userId);
+
+        // ─── New Facebook-Style Features ───
+        Task PinMemoryAsync(Guid memoryId, Guid userId, bool isPinned);
+        Task ToggleCommentsLockAsync(Guid memoryId, Guid userId, bool isLocked);
+        Task ToggleSaveMemoryAsync(Guid memoryId, Guid userId);
+        Task<bool> IsMemorySavedAsync(Guid memoryId, Guid userId);
+        Task<List<MemoryResponseDto>> GetSavedMemoriesAsync(Guid userId);
+        Task ToggleHideMemoryAsync(Guid memoryId, Guid userId);
+        Task ReportMemoryAsync(Guid memoryId, Guid userId, string reason, string description);
+        Task TogglePostNotificationAsync(Guid memoryId, Guid userId, bool enabled);
+        Task<bool> IsPostNotificationEnabledAsync(Guid memoryId, Guid userId);
     }
 
     public class MemoryService : IMemoryService
@@ -165,71 +176,93 @@ namespace backend.Services
                 .Select(f => f.SenderId == currentUserId ? f.ReceiverId : f.SenderId)
                 .ToList();
 
-            // Apply Facebook-Style Privacy Filtering
+            // Get hidden posts by current user to exclude them
+            var hiddenMemoryIds = await _memoryRepository.GetUserHiddenMemoryIdsAsync(currentUserId);
+
+            // Apply Facebook-Style Privacy Filtering + exclude hidden posts
             var filteredMemories = memories.Where(m =>
                 m.Privacy == "Public" ||
                 m.UserId == currentUserId ||
                 (m.Privacy == "Friends" && friendIds.Contains(m.UserId))
-            ).ToList();
+            ).Where(m => !hiddenMemoryIds.Contains(m.MemoryId)).ToList();
 
-            return filteredMemories.Select(m => new MemoryResponseDto
+            // Sort: pinned posts first, then by created date
+            var sortedMemories = filteredMemories
+                .OrderByDescending(m => m.IsPinned)
+                .ThenByDescending(m => m.PinnedAt ?? m.CreatedAt)
+                .ToList();
+
+            var result = new List<MemoryResponseDto>();
+            foreach (var m in sortedMemories)
             {
-                MemoryId = m.MemoryId,
-                GroupId = m.GroupId,
-                UserId = m.UserId,
-                User = new MemoryUserDto { UserId = m.User!.UserId, Username = m.User.Username, AvatarUrl = m.User.AvatarUrl },
-                Caption = m.Caption,
-                ImageUrl = m.ImageUrl,
-                Category = m.Category,
-                Privacy = m.Privacy,
-                CreatedAt = m.CreatedAt,
-                SharedMemoryId = m.SharedMemoryId,
-                Images = GetImagesFromMemory(m),
-                Comments = m.Comments.OrderBy(c => c.CreatedAt).Select(c => new CommentResponseDto
+                var isSaved = await _memoryRepository.GetSavedPostAsync(currentUserId, m.MemoryId) != null;
+                var isHidden = hiddenMemoryIds.Contains(m.MemoryId);
+
+                result.Add(new MemoryResponseDto
                 {
-                    CommentId = c.CommentId,
-                    MemoryId = c.MemoryId,
-                    UserId = c.UserId,
-                    Text = c.Text,
-                    CreatedAt = c.CreatedAt,
-                    EditedAt = c.EditedAt,
-                    IsPinned = c.IsPinned,
-                    User = new MemoryUserDto { UserId = c.User!.UserId, Username = c.User.Username, AvatarUrl = c.User.AvatarUrl },
-                    Replies = c.Replies?.OrderBy(r => r.CreatedAt).Select(r => new CommentResponseDto
+                    MemoryId = m.MemoryId,
+                    GroupId = m.GroupId,
+                    UserId = m.UserId,
+                    User = new MemoryUserDto { UserId = m.User!.UserId, Username = m.User.Username, AvatarUrl = m.User.AvatarUrl },
+                    Caption = m.Caption,
+                    ImageUrl = m.ImageUrl,
+                    Category = m.Category,
+                    Privacy = m.Privacy,
+                    CreatedAt = m.CreatedAt,
+                    IsPinned = m.IsPinned,
+                    PinnedAt = m.PinnedAt,
+                    IsCommentsLocked = m.IsCommentsLocked,
+                    IsSaved = isSaved,
+                    IsHidden = isHidden,
+                    SharedMemoryId = m.SharedMemoryId,
+                    Images = GetImagesFromMemory(m),
+                    Comments = m.Comments.OrderBy(c => c.CreatedAt).Select(c => new CommentResponseDto
                     {
-                        CommentId = r.CommentId,
-                        MemoryId = r.MemoryId,
-                        UserId = r.UserId,
-                        Text = r.Text,
-                        CreatedAt = r.CreatedAt,
-                        EditedAt = r.EditedAt,
-                        IsPinned = r.IsPinned,
-                        User = r.User == null ? null : new MemoryUserDto { UserId = r.User.UserId, Username = r.User.Username, AvatarUrl = r.User.AvatarUrl },
-                        Reactions = r.Reactions?.Select(rr => new ReactionResponseDto
+                        CommentId = c.CommentId,
+                        MemoryId = c.MemoryId,
+                        UserId = c.UserId,
+                        Text = c.Text,
+                        CreatedAt = c.CreatedAt,
+                        EditedAt = c.EditedAt,
+                        IsPinned = c.IsPinned,
+                        User = new MemoryUserDto { UserId = c.User!.UserId, Username = c.User.Username, AvatarUrl = c.User.AvatarUrl },
+                        Replies = c.Replies?.OrderBy(r => r.CreatedAt).Select(r => new CommentResponseDto
                         {
-                            MemoryId = rr.CommentId != null ? Guid.Empty : Guid.Empty,
-                            UserId = rr.UserId,
-                            Username = rr.User?.Username ?? "",
-                            EmojiType = rr.EmojiType,
+                            CommentId = r.CommentId,
+                            MemoryId = r.MemoryId,
+                            UserId = r.UserId,
+                            Text = r.Text,
+                            CreatedAt = r.CreatedAt,
+                            EditedAt = r.EditedAt,
+                            IsPinned = r.IsPinned,
+                            User = r.User == null ? null : new MemoryUserDto { UserId = r.User.UserId, Username = r.User.Username, AvatarUrl = r.User.AvatarUrl },
+                            Reactions = r.Reactions?.Select(rr => new ReactionResponseDto
+                            {
+                                MemoryId = rr.CommentId != null ? Guid.Empty : Guid.Empty,
+                                UserId = rr.UserId,
+                                Username = rr.User?.Username ?? "",
+                                EmojiType = rr.EmojiType,
+                                IsRemoved = false
+                            }).ToList()
+                        }).ToList(),
+                        Reactions = c.Reactions?.Select(cr => new ReactionResponseDto
+                        {
+                            MemoryId = cr.CommentId != null ? Guid.Empty : Guid.Empty,
+                            UserId = cr.UserId,
+                            Username = cr.User?.Username ?? "",
+                            EmojiType = cr.EmojiType,
                             IsRemoved = false
                         }).ToList()
                     }).ToList(),
-                    Reactions = c.Reactions?.Select(cr => new ReactionResponseDto
+                    Reactions = m.Reactions.Select(r => new ReactionDetailDto
                     {
-                        MemoryId = cr.CommentId != null ? Guid.Empty : Guid.Empty,
-                        UserId = cr.UserId,
-                        Username = cr.User?.Username ?? "",
-                        EmojiType = cr.EmojiType,
-                        IsRemoved = false
+                        ReactionId = r.ReactionId,
+                        EmojiType = r.EmojiType,
+                        User = new ReactionUserDto { UserId = r.User!.UserId, Username = r.User.Username }
                     }).ToList()
-                }).ToList(),
-                Reactions = m.Reactions.Select(r => new ReactionDetailDto
-                {
-                    ReactionId = r.ReactionId,
-                    EmojiType = r.EmojiType,
-                    User = new ReactionUserDto { UserId = r.User!.UserId, Username = r.User.Username }
-                }).ToList()
-            }).ToList();
+                });
+            }
+            return result;
         }
 
         public async Task<List<MemoryResponseDto>> GetGroupMemoriesAsync(Guid groupId, string? category)
@@ -352,16 +385,22 @@ namespace backend.Services
             if (comment.UserId != userId) throw new Exception("You can only edit your own comments.");
 
             comment.Text = text.Trim();
+            comment.EditedAt = DateTime.UtcNow;
             await _memoryRepository.SaveChangesAsync();
 
-            return new CommentResponseDto
+            var updatedComment = new CommentResponseDto
             {
                 CommentId = comment.CommentId,
                 MemoryId = comment.MemoryId,
+                UserId = comment.UserId,
                 Text = comment.Text,
                 CreatedAt = comment.CreatedAt,
+                EditedAt = comment.EditedAt,
                 User = new MemoryUserDto { UserId = comment.User!.UserId, Username = comment.User.Username, AvatarUrl = comment.User.AvatarUrl }
             };
+
+            await _hubContext.Clients.All.SendAsync("OnCommentUpdated", updatedComment);
+            return updatedComment;
         }
 
         public async Task DeleteCommentAsync(Guid commentId, Guid userId)
@@ -369,11 +408,18 @@ namespace backend.Services
             var comment = await _memoryRepository.GetCommentByIdAsync(commentId);
             if (comment == null) throw new Exception("Comment not found.");
 
+            // Allow the comment author OR the post owner to delete
+            var memory = await _memoryRepository.GetByIdAsync(comment.MemoryId);
+            if (comment.UserId != userId && (memory == null || memory.UserId != userId))
+                throw new Exception("You can only delete your own comments or comments on your post.");
+
             // Soft Delete
             comment.IsDeleted = true;
             comment.DeletedAt = DateTime.UtcNow;
 
             await _memoryRepository.SaveChangesAsync();
+
+            await _hubContext.Clients.All.SendAsync("OnCommentDeleted", commentId);
         }
 
         public async Task<ReactionResponseDto> ToggleReactionAsync(Guid memoryId, Guid userId, string emojiType)
@@ -507,6 +553,171 @@ namespace backend.Services
             await _memoryRepository.SaveChangesAsync();
         }
 
+        // ─── Pin memory ───
+        public async Task PinMemoryAsync(Guid memoryId, Guid userId, bool isPinned)
+        {
+            var memory = await _memoryRepository.GetByIdAsync(memoryId);
+            if (memory == null) throw new Exception("Memory not found.");
+            if (memory.UserId != userId) throw new Exception("You can only pin your own posts.");
+
+            await _memoryRepository.PinMemoryAsync(memoryId, isPinned);
+        }
+
+        // ─── Toggle comments lock ───
+        public async Task ToggleCommentsLockAsync(Guid memoryId, Guid userId, bool isLocked)
+        {
+            var memory = await _memoryRepository.GetByIdAsync(memoryId);
+            if (memory == null) throw new Exception("Memory not found.");
+            if (memory.UserId != userId) throw new Exception("You can only lock comments on your own posts.");
+
+            await _memoryRepository.ToggleCommentsLockAsync(memoryId, isLocked);
+        }
+
+        // ─── Save/Bookmark memory ───
+        public async Task ToggleSaveMemoryAsync(Guid memoryId, Guid userId)
+        {
+            var memory = await _memoryRepository.GetByIdAsync(memoryId);
+            if (memory == null) throw new Exception("Memory not found.");
+
+            var existing = await _memoryRepository.GetSavedPostAsync(userId, memoryId);
+            if (existing != null)
+            {
+                await _memoryRepository.RemoveSavedPostAsync(existing);
+            }
+            else
+            {
+                var savedPost = new SavedPost { UserId = userId, MemoryId = memoryId };
+                await _memoryRepository.AddSavedPostAsync(savedPost);
+            }
+            await _memoryRepository.SaveChangesAsync();
+        }
+
+        public async Task<bool> IsMemorySavedAsync(Guid memoryId, Guid userId)
+        {
+            var saved = await _memoryRepository.GetSavedPostAsync(userId, memoryId);
+            return saved != null;
+        }
+
+        public async Task<List<MemoryResponseDto>> GetSavedMemoriesAsync(Guid userId)
+        {
+            var savedMemoryIds = await _memoryRepository.GetUserSavedMemoryIdsAsync(userId);
+            var savedMemories = new List<MemoryResponseDto>();
+
+            foreach (var memoryId in savedMemoryIds)
+            {
+                var memory = await _memoryRepository.GetByIdAsync(memoryId);
+                if (memory != null)
+                {
+                    savedMemories.Add(await GetFeedItemAsync(memory, userId));
+                }
+            }
+            return savedMemories;
+        }
+
+        // ─── Hide memory ───
+        public async Task ToggleHideMemoryAsync(Guid memoryId, Guid userId)
+        {
+            var memory = await _memoryRepository.GetByIdAsync(memoryId);
+            if (memory == null) throw new Exception("Memory not found.");
+
+            var existing = await _memoryRepository.GetHiddenPostAsync(userId, memoryId);
+            if (existing != null)
+            {
+                await _memoryRepository.RemoveHiddenPostAsync(existing);
+            }
+            else
+            {
+                var hiddenPost = new HiddenPost { UserId = userId, MemoryId = memoryId };
+                await _memoryRepository.AddHiddenPostAsync(hiddenPost);
+            }
+            await _memoryRepository.SaveChangesAsync();
+        }
+
+        // ─── Report memory ───
+        public async Task ReportMemoryAsync(Guid memoryId, Guid userId, string reason, string description)
+        {
+            var memory = await _memoryRepository.GetByIdAsync(memoryId);
+            if (memory == null) throw new Exception("Memory not found.");
+
+            var report = new PostReport
+            {
+                ReporterId = userId,
+                MemoryId = memoryId,
+                Reason = reason,
+                Description = description,
+                Status = "Pending"
+            };
+            await _memoryRepository.AddPostReportAsync(report);
+            await _memoryRepository.SaveChangesAsync();
+        }
+
+        // ─── Post notification settings ───
+        public async Task TogglePostNotificationAsync(Guid memoryId, Guid userId, bool enabled)
+        {
+            var memory = await _memoryRepository.GetByIdAsync(memoryId);
+            if (memory == null) throw new Exception("Memory not found.");
+
+            var existing = await _memoryRepository.GetPostNotificationSettingAsync(userId, memoryId);
+            if (existing != null)
+            {
+                await _memoryRepository.RemovePostNotificationSettingAsync(existing);
+            }
+            else if (enabled)
+            {
+                var setting = new PostNotificationSetting
+                {
+                    UserId = userId,
+                    MemoryId = memoryId,
+                    IsEnabled = true
+                };
+                await _memoryRepository.AddPostNotificationSettingAsync(setting);
+            }
+            await _memoryRepository.SaveChangesAsync();
+        }
+
+        public async Task<bool> IsPostNotificationEnabledAsync(Guid memoryId, Guid userId)
+        {
+            var setting = await _memoryRepository.GetPostNotificationSettingAsync(userId, memoryId);
+            return setting?.IsEnabled ?? false;
+        }
+
+        // ─── Helper for saved/memories ───
+        private async Task<MemoryResponseDto> GetFeedItemAsync(Memory memory, Guid currentUserId)
+        {
+            // Simplified version - return basic MemoryResponseDto
+            return new MemoryResponseDto
+            {
+                MemoryId = memory.MemoryId,
+                GroupId = memory.GroupId,
+                UserId = memory.UserId,
+                User = new MemoryUserDto { UserId = memory.User!.UserId, Username = memory.User.Username, AvatarUrl = memory.User.AvatarUrl },
+                Caption = memory.Caption,
+                ImageUrl = memory.ImageUrl,
+                Category = memory.Category,
+                Privacy = memory.Privacy,
+                CreatedAt = memory.CreatedAt,
+                SharedMemoryId = memory.SharedMemoryId,
+                Images = GetImagesFromMemory(memory),
+                Comments = memory.Comments.OrderBy(c => c.CreatedAt).Select(c => new CommentResponseDto
+                {
+                    CommentId = c.CommentId,
+                    MemoryId = c.MemoryId,
+                    UserId = c.UserId,
+                    Text = c.Text,
+                    CreatedAt = c.CreatedAt,
+                    EditedAt = c.EditedAt,
+                    IsPinned = c.IsPinned,
+                    User = new MemoryUserDto { UserId = c.User!.UserId, Username = c.User.Username, AvatarUrl = c.User.AvatarUrl }
+                }).ToList(),
+                Reactions = memory.Reactions.Select(r => new ReactionDetailDto
+                {
+                    ReactionId = r.ReactionId,
+                    EmojiType = r.EmojiType,
+                    User = new ReactionUserDto { UserId = r.User!.UserId, Username = r.User.Username }
+                }).ToList()
+            };
+        }
+
         private List<string> GetImagesFromMemory(Memory memory)
         {
             if (string.IsNullOrWhiteSpace(memory.ImagesJson) || memory.ImagesJson == "[]")
@@ -536,6 +747,11 @@ namespace backend.Services
         public string Category { get; set; } = string.Empty;
         public string Privacy { get; set; } = "Public";
         public DateTime CreatedAt { get; set; }
+        public bool IsPinned { get; set; } = false;
+        public DateTime? PinnedAt { get; set; }
+        public bool IsCommentsLocked { get; set; } = false;
+        public bool IsSaved { get; set; } = false;
+        public bool IsHidden { get; set; } = false;
         public Guid? SharedMemoryId { get; set; }
         public List<CommentResponseDto> Comments { get; set; } = new();
         public List<ReactionDetailDto> Reactions { get; set; } = new();

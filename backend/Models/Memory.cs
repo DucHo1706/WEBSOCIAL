@@ -25,9 +25,28 @@ namespace backend.Models
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
 
+        // Pin post (Ghim bài viết) - owner can pin to top of profile/feed
+        public bool IsPinned { get; set; } = false;
+        public DateTime? PinnedAt { get; set; }
+
+        // Lock comments (Tắt bình luận) - owner can disable comments
+        public bool IsCommentsLocked { get; set; } = false;
+
         // Share functionality: reference to original shared post
         public Guid? SharedMemoryId { get; set; }
         public Memory? SharedMemory { get; set; }
+
+        // Saved posts (bookmarks) - many-to-many via SavedPost
+        public ICollection<SavedPost>? SavedByUsers { get; set; }
+
+        // Hidden posts - many-to-many via HiddenPost
+        public ICollection<HiddenPost>? HiddenByUsers { get; set; }
+
+        // Reports on this post
+        public ICollection<PostReport>? Reports { get; set; }
+
+        // Notification settings per user
+        public ICollection<PostNotificationSetting>? NotificationSettings { get; set; }
 
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();

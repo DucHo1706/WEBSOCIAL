@@ -23,34 +23,25 @@ namespace backend.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-            {
                 return BadRequest(new { message = "Username, Email, and Password are required." });
-            }
 
             try
             {
                 var user = await _authService.RegisterAsync(request.Username, request.Email, request.Password, request.AvatarUrl);
                 return Ok(user);
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-            {
                 return BadRequest(new { message = "Email and Password are required." });
-            }
 
             var user = await _authService.LoginAsync(request.Email, request.Password);
             if (user == null)
-            {
                 return BadRequest(new { message = "Invalid email or password." });
-            }
 
             return Ok(user);
         }
@@ -58,11 +49,9 @@ namespace backend.Controllers
         [HttpPost("update")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
-            var user = await _authService.UpdateProfileAsync(request.UserId, request.Username, request.AvatarUrl, request.CoverImageUrl, request.Bio);
+            var user = await _authService.UpdateProfileAsync(request.UserId, request.Username, request.AvatarUrl, request.CoverImageUrl, request.Bio, request.Nickname, request.Location, request.DateOfBirth, request.RelationshipStatus, request.Education);
             if (user == null)
-            {
                 return NotFound(new { message = "User not found." });
-            }
 
             return Ok(user);
         }
@@ -76,10 +65,7 @@ namespace backend.Controllers
                 if (!success) return BadRequest(new { message = "Mật khẩu cũ không đúng." });
                 return Ok(new { message = "Đổi mật khẩu thành công." });
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
         }
 
         [HttpPost("upload-image")]
@@ -87,18 +73,23 @@ namespace backend.Controllers
         {
             try
             {
-                if (file == null || file.Length == 0)
-                {
-                    return BadRequest(new { message = "No file uploaded." });
-                }
-
+                if (file == null || file.Length == 0) return BadRequest(new { message = "No file uploaded." });
                 var url = await _imgBbService.UploadImageAsync(file);
                 return Ok(new { url });
             }
-            catch (Exception ex)
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
+
+        [HttpGet("{userId}")]
+        public async Task<IActionResult> GetPublicProfile(Guid userId, [FromQuery] Guid viewerId)
+        {
+            try
             {
-                return BadRequest(new { message = ex.Message });
+                var user = await _authService.GetPublicProfileAsync(userId, viewerId);
+                if (user == null) return NotFound(new { message = "User not found." });
+                return Ok(user);
             }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
         }
     }
 
@@ -123,7 +114,13 @@ namespace backend.Controllers
         public string? AvatarUrl { get; set; }
         public string? CoverImageUrl { get; set; }
         public string? Bio { get; set; }
+        public string? Nickname { get; set; }
+        public string? Location { get; set; }
+        public DateTime? DateOfBirth { get; set; }
+        public string? RelationshipStatus { get; set; }
+        public string? Education { get; set; }
     }
+
     public class ChangePasswordRequest
     {
         public Guid UserId { get; set; }

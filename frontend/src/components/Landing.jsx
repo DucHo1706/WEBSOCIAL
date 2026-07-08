@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { apiRequest } from "../api";
-import { Sparkle, Users, Plus, ArrowRight } from "@phosphor-icons/react";
+import { Sparkle, Users, Plus, ArrowRight, Envelope, Lock, User } from "@phosphor-icons/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Landing({ onAuthSuccess, onGroupSuccess }) {
   const [isRegister, setIsRegister] = useState(false);
@@ -76,77 +77,112 @@ export default function Landing({ onAuthSuccess, onGroupSuccess }) {
 
   if (!user) {
     return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 bg-gradient-to-br from-coral-50 via-stone-50 to-mint-50">
-        <div className="w-full max-w-md bg-white rounded-3xl p-8 border border-coral-100 shadow-xl shadow-coral-100/30">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 relative overflow-hidden bg-[#FAF9F6] dark:bg-[#09090b] transition-colors duration-300">
+        {/* Animated background glow circles */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-coral-500/10 blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-[-15%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-coral-600/10 dark:bg-coral-500/5 blur-[120px] pointer-events-none" />
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="w-full max-w-md bg-white/80 dark:bg-stone-900/60 backdrop-blur-xl border border-white/20 dark:border-stone-800 shadow-2xl rounded-3xl p-8 z-10"
+        >
           <div className="flex flex-col items-center mb-8">
-            <div className="w-14 h-14 bg-coral-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-coral-500/20">
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-14 h-14 bg-coral-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-coral-500/25 cursor-pointer"
+            >
               <Sparkle size={28} weight="fill" />
-            </div>
-            <h1 className="font-display text-3xl font-extrabold text-stone-900 tracking-tight text-center">
+            </motion.div>
+            <h1 className="font-display text-3xl font-extrabold text-stone-900 dark:text-stone-50 tracking-tight text-center">
               Sunlit Memories
             </h1>
-            <p className="text-sm text-stone-500 mt-2 text-center max-w-[32ch]">
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-2 text-center max-w-[32ch]">
               Giữ những người thân thương gần nhau hơn. Chia sẻ mọi kỷ niệm đáng nhớ của nhóm bạn.
             </p>
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
-            {isRegister && (
-              <div>
-                <label className="block text-xs font-semibold text-stone-600 mb-1 uppercase tracking-wider">Tên Tài Khoản</label>
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Ví dụ: nguyenvana"
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-stone-900 bg-stone-50/50 text-sm"
-                />
-              </div>
-            )}
+            <AnimatePresence mode="wait">
+              {isRegister && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <label className="block text-xs font-semibold text-stone-500 dark:text-stone-400 mb-1 uppercase tracking-wider">Tên Tài Khoản</label>
+                  <div className="relative">
+                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <input
+                      type="text"
+                      required
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Ví dụ: nguyenvana"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-stone-900 dark:text-stone-100 bg-stone-50/50 dark:bg-stone-950/50 text-sm transition-all"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1 uppercase tracking-wider">Địa Chỉ Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tenban@vi-du.com"
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-stone-900 bg-stone-50/50 text-sm"
-              />
+              <label className="block text-xs font-semibold text-stone-500 dark:text-stone-400 mb-1 uppercase tracking-wider">Địa Chỉ Email</label>
+              <div className="relative">
+                <Envelope size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tenban@vi-du.com"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-stone-900 dark:text-stone-100 bg-stone-50/50 dark:bg-stone-950/50 text-sm transition-all"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1 uppercase tracking-wider">Mật Khẩu</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-stone-900 bg-stone-50/50 text-sm"
-              />
+              <label className="block text-xs font-semibold text-stone-500 dark:text-stone-400 mb-1 uppercase tracking-wider">Mật Khẩu</label>
+              <div className="relative">
+                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-stone-900 dark:text-stone-100 bg-stone-50/50 dark:bg-stone-950/50 text-sm transition-all"
+                />
+              </div>
             </div>
 
             {error && (
-              <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-xs font-medium">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/50 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-medium"
+              >
                 {error}
-              </div>
+              </motion.div>
             )}
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-coral-500 hover:bg-coral-600 text-white rounded-xl font-semibold shadow-lg shadow-coral-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer text-sm"
+              className="w-full py-3.5 bg-coral-500 hover:bg-coral-600 text-white rounded-xl font-semibold shadow-lg shadow-coral-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer text-sm"
             >
               {loading ? "Đang xử lý..." : isRegister ? "Đăng Ký Tài Khoản" : "Đăng Nhập"}
               <ArrowRight size={18} weight="bold" />
-            </button>
+            </motion.button>
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-stone-500">
+            <span className="text-stone-500 dark:text-stone-400">
               {isRegister ? "Đã có tài khoản? " : "Bạn mới tham gia? "}
             </span>
             <button
@@ -154,43 +190,53 @@ export default function Landing({ onAuthSuccess, onGroupSuccess }) {
                 setIsRegister(!isRegister);
                 setError("");
               }}
-              className="text-coral-500 font-semibold hover:underline cursor-pointer"
+              className="text-coral-500 font-semibold hover:underline cursor-pointer transition-all"
             >
               {isRegister ? "Đăng Nhập Ngay" : "Đăng Ký Miễn Phí"}
             </button>
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   // If user is authenticated but needs to select/join a group
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 bg-gradient-to-br from-coral-50 via-stone-50 to-mint-50">
-      <div className="w-full max-w-md bg-white rounded-3xl p-8 border border-coral-100 shadow-xl shadow-coral-100/30">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 relative overflow-hidden bg-[#FAF9F6] dark:bg-[#09090b] transition-colors duration-300">
+      {/* Animated background glow circles */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-coral-500/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-15%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-coral-600/10 dark:bg-coral-500/5 blur-[120px] pointer-events-none" />
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="w-full max-w-md bg-white/80 dark:bg-stone-900/60 backdrop-blur-xl border border-white/20 dark:border-stone-800 shadow-2xl rounded-3xl p-8 z-10"
+      >
         <div className="flex flex-col items-center mb-8">
-          <img
+          <motion.img
+            whileHover={{ scale: 1.05 }}
             src={user.AvatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.Username}`}
             alt={user.Username}
-            className="w-16 h-16 rounded-full border-2 border-coral-500 mb-4 bg-coral-50"
+            className="w-16 h-16 rounded-full border-2 border-coral-500 mb-4 bg-coral-50 shadow-md object-cover"
           />
-          <h2 className="font-display text-2xl font-bold text-stone-900 text-center">
+          <h2 className="font-display text-2xl font-bold text-stone-900 dark:text-stone-50 text-center">
             Chào mừng, {user.Username}!
           </h2>
-          <p className="text-sm text-stone-500 mt-1 text-center">
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1 text-center">
             Hãy tạo một nhóm kỷ niệm mới hoặc gia nhập nhóm đã có.
           </p>
         </div>
 
         {/* Toggle between Join and Create */}
-        <div className="flex bg-stone-100 rounded-xl p-1 mb-6">
+        <div className="flex bg-stone-100 dark:bg-stone-950 p-1 rounded-xl mb-6 relative">
           <button
             onClick={() => {
               setIsJoin(true);
               setError("");
             }}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all cursor-pointer ${
-              isJoin ? "bg-white text-coral-500 shadow-sm" : "text-stone-500 hover:text-stone-800"
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all cursor-pointer relative z-10 ${
+              isJoin ? "bg-white dark:bg-stone-900 text-coral-500 shadow-sm" : "text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200"
             }`}
           >
             <span className="flex items-center justify-center gap-1.5">
@@ -203,8 +249,8 @@ export default function Landing({ onAuthSuccess, onGroupSuccess }) {
               setIsJoin(false);
               setError("");
             }}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all cursor-pointer ${
-              !isJoin ? "bg-white text-coral-500 shadow-sm" : "text-stone-500 hover:text-stone-800"
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all cursor-pointer relative z-10 ${
+              !isJoin ? "bg-white dark:bg-stone-900 text-coral-500 shadow-sm" : "text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200"
             }`}
           >
             <span className="flex items-center justify-center gap-1.5">
@@ -215,47 +261,67 @@ export default function Landing({ onAuthSuccess, onGroupSuccess }) {
         </div>
 
         <form onSubmit={handleGroupAction} className="space-y-4">
-          {isJoin ? (
-            <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1 uppercase tracking-wider text-center">Nhập Mã Mời 6 Chữ Số</label>
-              <input
-                type="text"
-                required
-                maxLength={6}
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value.replace(/\D/g, ""))}
-                placeholder="Ví dụ: 123456"
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-stone-900 bg-stone-50/50 text-center text-lg font-bold tracking-widest"
-              />
-            </div>
-          ) : (
-            <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1 uppercase tracking-wider">Tên Nhóm Kỷ Niệm</label>
-              <input
-                type="text"
-                required
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                placeholder="Ví dụ: Gia Đình Thân Yêu, Bạn Cấp 3..."
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-stone-900 bg-stone-50/50 text-sm"
-              />
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {isJoin ? (
+              <motion.div
+                key="join-group"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <label className="block text-xs font-semibold text-stone-500 dark:text-stone-400 mb-2.5 uppercase tracking-wider text-center">Nhập Mã Mời 6 Chữ Số</label>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Ví dụ: 123456"
+                  className="w-full px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-stone-900 dark:text-stone-100 bg-stone-50 dark:bg-stone-950 text-center text-lg font-bold tracking-widest transition-all"
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="create-group"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <label className="block text-xs font-semibold text-stone-500 dark:text-stone-400 mb-2 uppercase tracking-wider">Tên Nhóm Kỷ Niệm</label>
+                <input
+                  type="text"
+                  required
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="Ví dụ: Gia Đình Thân Yêu, Bạn Cấp 3..."
+                  className="w-full px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-stone-900 dark:text-stone-100 bg-stone-50 dark:bg-stone-950 text-sm transition-all"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-xs font-medium">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/50 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-medium"
+            >
               {error}
-            </div>
+            </motion.div>
           )}
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-coral-500 hover:bg-coral-600 text-white rounded-xl font-semibold shadow-lg shadow-coral-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer text-sm"
+            className="w-full py-3.5 bg-coral-500 hover:bg-coral-600 text-white rounded-xl font-semibold shadow-lg shadow-coral-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer text-sm"
           >
             {loading ? "Đang xử lý..." : isJoin ? "Vào Nhóm Kỷ Niệm" : "Tạo Nhóm Kỷ Niệm"}
             <ArrowRight size={18} weight="bold" />
-          </button>
+          </motion.button>
         </form>
 
         <button
@@ -264,11 +330,11 @@ export default function Landing({ onAuthSuccess, onGroupSuccess }) {
             setUser(null);
             setError("");
           }}
-          className="w-full mt-6 text-center text-xs text-stone-400 hover:text-stone-600 cursor-pointer font-medium"
+          className="w-full mt-6 text-center text-xs text-stone-400 hover:text-stone-500 dark:hover:text-stone-300 cursor-pointer font-medium transition-colors"
         >
           Đăng xuất tài khoản
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 }

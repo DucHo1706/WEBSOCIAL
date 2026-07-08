@@ -29,6 +29,21 @@ namespace backend.Repositories
         Task AddCommentReactionAsync(CommentReaction reaction);
         void RemoveCommentReaction(CommentReaction reaction);
         Task SaveChangesAsync();
+        // ─── New feature methods ───
+        Task PinMemoryAsync(Guid memoryId, bool isPinned);
+        Task ToggleCommentsLockAsync(Guid memoryId, bool isLocked);
+        Task<SavedPost?> GetSavedPostAsync(Guid userId, Guid memoryId);
+        Task AddSavedPostAsync(SavedPost savedPost);
+        Task RemoveSavedPostAsync(SavedPost savedPost);
+        Task<List<Guid>> GetUserSavedMemoryIdsAsync(Guid userId);
+        Task<HiddenPost?> GetHiddenPostAsync(Guid userId, Guid memoryId);
+        Task AddHiddenPostAsync(HiddenPost hiddenPost);
+        Task RemoveHiddenPostAsync(HiddenPost hiddenPost);
+        Task<List<Guid>> GetUserHiddenMemoryIdsAsync(Guid userId);
+        Task AddPostReportAsync(PostReport report);
+        Task<PostNotificationSetting?> GetPostNotificationSettingAsync(Guid userId, Guid memoryId);
+        Task AddPostNotificationSettingAsync(PostNotificationSetting setting);
+        Task RemovePostNotificationSettingAsync(PostNotificationSetting setting);
     }
 
     public class MemoryRepository : IMemoryRepository
@@ -198,6 +213,105 @@ namespace backend.Repositories
         public void RemoveCommentReaction(CommentReaction reaction)
         {
             _context.CommentReactions.Remove(reaction);
+        }
+
+        // ─── Pin memory ───
+        public async Task PinMemoryAsync(Guid memoryId, bool isPinned)
+        {
+            var memory = await _context.Memories.FindAsync(memoryId);
+            if (memory == null) return;
+            memory.IsPinned = isPinned;
+            memory.PinnedAt = isPinned ? DateTime.UtcNow : null;
+            await _context.SaveChangesAsync();
+        }
+
+        // ─── Toggle comments lock ───
+        public async Task ToggleCommentsLockAsync(Guid memoryId, bool isLocked)
+        {
+            var memory = await _context.Memories.FindAsync(memoryId);
+            if (memory == null) return;
+            memory.IsCommentsLocked = isLocked;
+            await _context.SaveChangesAsync();
+        }
+
+        // ─── Saved posts (bookmarks) ───
+        public async Task<SavedPost?> GetSavedPostAsync(Guid userId, Guid memoryId)
+        {
+            return await _context.SavedPosts
+                .FirstOrDefaultAsync(sp => sp.UserId == userId && sp.MemoryId == memoryId);
+        }
+
+        public async Task AddSavedPostAsync(SavedPost savedPost)
+        {
+            await _context.SavedPosts.AddAsync(savedPost);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RemoveSavedPostAsync(SavedPost savedPost)
+        {
+            _context.SavedPosts.Remove(savedPost);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<Guid>> GetUserSavedMemoryIdsAsync(Guid userId)
+        {
+            return await _context.SavedPosts
+                .Where(sp => sp.UserId == userId)
+                .Select(sp => sp.MemoryId)
+                .ToListAsync();
+        }
+
+        // ─── Hidden posts ───
+        public async Task<HiddenPost?> GetHiddenPostAsync(Guid userId, Guid memoryId)
+        {
+            return await _context.HiddenPosts
+                .FirstOrDefaultAsync(hp => hp.UserId == userId && hp.MemoryId == memoryId);
+        }
+
+        public async Task AddHiddenPostAsync(HiddenPost hiddenPost)
+        {
+            await _context.HiddenPosts.AddAsync(hiddenPost);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RemoveHiddenPostAsync(HiddenPost hiddenPost)
+        {
+            _context.HiddenPosts.Remove(hiddenPost);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<Guid>> GetUserHiddenMemoryIdsAsync(Guid userId)
+        {
+            return await _context.HiddenPosts
+                .Where(hp => hp.UserId == userId)
+                .Select(hp => hp.MemoryId)
+                .ToListAsync();
+        }
+
+        // ─── Post reports ───
+        public async Task AddPostReportAsync(PostReport report)
+        {
+            await _context.PostReports.AddAsync(report);
+            await _context.SaveChangesAsync();
+        }
+
+        // ─── Notification settings ───
+        public async Task<PostNotificationSetting?> GetPostNotificationSettingAsync(Guid userId, Guid memoryId)
+        {
+            return await _context.PostNotificationSettings
+                .FirstOrDefaultAsync(s => s.UserId == userId && s.MemoryId == memoryId);
+        }
+
+        public async Task AddPostNotificationSettingAsync(PostNotificationSetting setting)
+        {
+            await _context.PostNotificationSettings.AddAsync(setting);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RemovePostNotificationSettingAsync(PostNotificationSetting setting)
+        {
+            _context.PostNotificationSettings.Remove(setting);
+            await _context.SaveChangesAsync();
         }
     }
 }

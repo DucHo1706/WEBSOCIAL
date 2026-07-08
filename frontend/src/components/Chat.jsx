@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { apiRequest, getApiUrl } from "../api";
-import { PaperPlaneRight, Image, Smiley, Users, Plus, CaretLeft, Sparkle, ChatCircle } from "@phosphor-icons/react";
+import { PaperPlaneRight, Image, Smiley, Users, Plus, CaretLeft, Sparkle, ChatCircle, Trash } from "@phosphor-icons/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactionTriggered, connection }) {
   const [conversations, setConversations] = useState([]);
@@ -56,10 +57,8 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
     if (!connection) return;
 
     const handleIncomingMessage = (lastMsg) => {
-      // Refresh conversation list preview order
       loadConversations();
 
-      // If message is for currently active conversation
       if (activeConv) {
         const isCurrentGroupMsg = activeConv.IsGroup && lastMsg.GroupChatId === activeConv.UserId;
         const isCurrentDirectMsg = !activeConv.IsGroup && !lastMsg.GroupChatId && 
@@ -67,7 +66,6 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
            (lastMsg.UserId === activeConv.UserId && lastMsg.ReceiverId === user.UserId));
 
         if (isCurrentGroupMsg || isCurrentDirectMsg) {
-          // Avoid duplicates
           setMessages(prev => {
             if (prev.some(m => m.ChatMessageId === lastMsg.ChatMessageId)) return prev;
             return [...prev, lastMsg];
@@ -157,7 +155,6 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
       if (selectedImage) {
         formData.append("Image", selectedImage);
       }
-      // Reply support
       if (replyToMsg) {
         formData.append("ReplyToMessageId", replyToMsg.ChatMessageId);
         formData.append("ReplyToText", replyToMsg.MessageText || (replyToMsg.ImageUrl ? "[Hình ảnh]" : ""));
@@ -165,13 +162,11 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
 
       const data = await apiRequest("/api/chat/send", "POST", formData, true);
       
-      // Update local message list directly (SignalR will also broadcast but this handles instant preview)
       setMessages(prev => {
         if (prev.some(m => m.ChatMessageId === data.ChatMessageId)) return prev;
         return [...prev, data];
       });
 
-      // Clear fields
       setText("");
       setSelectedImage(null);
       setImagePreview(null);
@@ -183,6 +178,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
       setLoading(false);
     }
   };
+
   const handleRecall = async (messageId) => {
     if (!window.confirm("Bạn có chắc chắn muốn thu hồi tin nhắn này không?")) return;
     try {
@@ -195,6 +191,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
       alert("Thu hồi tin nhắn thất bại: " + err.message);
     }
   };
+
   const handleCreateGroupChat = async (e) => {
     e.preventDefault();
     if (!newGroupName.trim() || selectedFriends.length === 0) {
@@ -203,14 +200,12 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
     }
 
     try {
-      // Add current user to group members list
       const members = [...selectedFriends, user.UserId];
       const data = await apiRequest("/api/chat/group/create", "POST", {
         groupName: newGroupName.trim(),
         memberIds: members
       });
 
-      // Tell SignalR to join group room immediately if connection is active
       if (connection) {
         await connection.invoke("JoinGroup", data.GroupChatId);
       }
@@ -220,7 +215,6 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
       setSelectedFriends([]);
       loadConversations();
       
-      // Select new group chat directly
       setActiveConv({
         UserId: data.GroupChatId,
         Username: data.GroupName,
@@ -244,7 +238,6 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
       onEmojiReactionTriggered(emoji);
     }
     
-    // Broadcast emoji floating locally and to group via SignalR
     if (connection && activeConv) {
       connection.invoke("OnEmojiFloat", activeConv.UserId, emoji);
     }
@@ -256,11 +249,11 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
     const newEmojis = Array.from({ length: 8 }).map((_, index) => {
       const id = `${Date.now()}-${Math.random()}`;
       const style = {
-        left: `${30 + Math.random() * 40}%`,
+        left: `${35 + Math.random() * 30}%`,
         bottom: `80px`,
         transform: `rotate(${Math.random() * 40 - 20}deg) scale(${0.8 + Math.random() * 0.6})`,
-        animationDelay: `${index * 0.1}s`,
-        animationDuration: `${1.5 + Math.random() * 1}s`
+        animationDelay: `${index * 0.08}s`,
+        animationDuration: `${1.2 + Math.random() * 0.8}s`
       };
       return { id, emoji, style };
     });
@@ -269,7 +262,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
 
     setTimeout(() => {
       setFloatingEmojis(prev => prev.filter(e => !newEmojis.map(ne => ne.id).includes(e.id)));
-    }, 3000);
+    }, 2500);
   };
 
   useEffect(() => {
@@ -280,14 +273,14 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
   }, []);
 
   return (
-    <div className="pb-[72px] pt-4 px-4 max-w-md mx-auto flex flex-col h-[100dvh] relative overflow-hidden">
+    <div className="pb-0 pt-4 px-4 max-w-md mx-auto flex flex-col h-[100dvh] relative overflow-hidden bg-app">
       {/* Floating Emoji Layer */}
-      <div className="absolute inset-0 pointer-events-none z-50">
+      <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
         {floatingEmojis.map((e) => (
           <span
             key={e.id}
             style={e.style}
-            className="absolute text-3xl animate-float-up opacity-0"
+            className="absolute text-3xl animate-float-up opacity-0 select-none"
           >
             {e.emoji}
           </span>
@@ -296,70 +289,75 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
 
       {/* Main Container */}
       {!activeConv ? (
-        // 1. Conversations inbox list
+        // 1. Conversations list
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex justify-between items-center pb-4 border-b border-stone-150 shrink-0">
+          <div className="flex justify-between items-center pb-4 border-b border-custom shrink-0">
             <div>
-              <h2 className="font-display text-2xl font-bold text-stone-900">Hộp Thư Chat</h2>
-              <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mt-0.5">Trò chuyện trực tuyến</p>
+              <h2 className="font-display text-2xl font-bold text-stone-850 dark:text-stone-100">Hộp Thư Chat</h2>
+              <p className="text-[10px] text-stone-400 dark:text-stone-500 font-bold uppercase tracking-wider mt-0.5">Trò chuyện trực tuyến</p>
             </div>
-            <button
-              onClick={() => { setShowCreateModal(true); setIsCreating(true); }}
-              className="p-2.5 bg-coral-50 dark:bg-coral-500/10 hover:bg-coral-100 dark:hover:bg-coral-500/20 text-coral-500 rounded-xl flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer active:scale-95"
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setShowCreateModal(true)}
+              className="p-2.5 bg-coral-50 dark:bg-coral-500/10 hover:bg-coral-100 dark:hover:bg-coral-500/25 text-coral-500 rounded-xl flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-sm border border-coral-200/20"
             >
-              <Plus size={16} /> Nhóm Chat
-            </button>
+              <Plus size={16} weight="bold" />
+              <span>Tạo nhóm</span>
+            </motion.button>
           </div>
 
-          <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 scrollbar-none">
+          <div className="flex-1 overflow-y-auto py-3 space-y-2 pr-1 scrollbar-none">
             {conversations.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-stone-400 space-y-2">
-                <ChatCircle size={38} className="text-stone-300 mx-auto" />
-                <p className="text-xs">Bạn chưa có hội thoại nào. Kết bạn để bắt đầu trò chuyện nhé!</p>
+                <ChatCircle size={38} className="text-stone-300 dark:text-stone-700 mx-auto" />
+                <p className="text-xs">Bạn chưa có cuộc trò chuyện nào. Hãy kết bạn để bắt đầu tán gẫu nhé!</p>
               </div>
             ) : (
               conversations.map((c) => (
-                <div
+                <motion.div
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.99 }}
                   key={c.UserId}
                   onClick={() => setActiveConv(c)}
-                  className="flex items-center gap-3 p-3.5 bg-card-custom border border-custom rounded-2xl cursor-pointer hover:border-coral-100 hover:bg-coral-50 dark:hover:bg-coral-500/10 transition-all shadow-xs"
+                  className="flex items-center gap-3 p-3.5 bg-white/70 dark:bg-stone-900/50 backdrop-blur-md border border-white/20 dark:border-stone-850/50 rounded-2xl cursor-pointer hover:border-coral-200/50 hover:bg-coral-50/20 dark:hover:bg-coral-500/5 transition-all shadow-sm"
                 >
                   <img
                     src={c.AvatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${c.Name}`}
                     alt={c.Name}
-                    className={`w-10 h-10 rounded-full border bg-stone-50 ${c.IsGroup ? "border-amber-400" : "border-coral-300"}`}
+                    className={`w-10 h-10 rounded-full border bg-stone-50 shadow-inner ${c.IsGroup ? "border-amber-400" : "border-coral-300"}`}
                   />
-                  <div className="flex-1">
-                    <span className="text-xs font-bold text-stone-850 block">{c.Name}</span>
-                    <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block mt-0.5">
-                      {c.IsGroup ? "👥 Nhóm Chat" : "👤 Cá Nhân"}
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold text-stone-800 dark:text-stone-150 block truncate leading-tight">{c.Name}</span>
+                    <span className="text-[9px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider block mt-1">
+                      {c.IsGroup ? "👥 Nhóm Chat" : "👤 Bạn Bè"}
                     </span>
                   </div>
-                </div>
+                </motion.div>
               ))
             )}
           </div>
         </div>
       ) : (
-        // 2. Chat screen room (Messenger window)
+        // 2. Chat screen room
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center gap-3 pb-3 border-b border-stone-150 shrink-0">
+          <div className="flex items-center gap-3 pb-3 border-b border-custom shrink-0">
             <button
               onClick={() => { setActiveConv(null); setMessages([]); }}
-              className="p-1.5 hover:bg-hover-custom rounded-lg text-secondary-custom cursor-pointer"
+              className="p-1.5 hover:bg-stone-100 dark:hover:bg-stone-850 rounded-xl text-stone-500 dark:text-stone-400 cursor-pointer transition-colors active:scale-95"
             >
-              <CaretLeft size={20} />
+              <CaretLeft size={20} weight="bold" />
             </button>
             <img
               src={activeConv.AvatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${activeConv.Name}`}
               alt={activeConv.Name}
-              className="w-8 h-8 rounded-full border bg-stone-50"
+              className="w-8 h-8 rounded-full border border-coral-200/30 bg-stone-50 shadow-sm"
             />
             <div>
-              <span className="text-xs font-bold text-stone-800 block leading-tight">{activeConv.Name}</span>
-              <span className="text-[9px] text-stone-400 block mt-0.5">
-                {activeConv.IsGroup ? "Nhóm chat riêng" : "Đang hoạt động"}
+              <span className="text-xs font-bold text-stone-850 dark:text-stone-150 block leading-tight">{activeConv.Name}</span>
+              <span className="text-[9px] text-stone-400 dark:text-stone-500 block mt-0.5">
+                {activeConv.IsGroup ? "Nhóm trò chuyện" : "Đang hoạt động"}
               </span>
             </div>
           </div>
@@ -367,45 +365,47 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
           {/* Messages list */}
           <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 scrollbar-none">
             {messages.length === 0 ? (
-              <p className="text-center text-[10px] text-tertiary-custom py-12">Không có tin nhắn nào. Gửi lời chào trước đi nào!</p>
+              <p className="text-center text-[10px] text-stone-400 py-12 italic">Không có tin nhắn nào. Bắt đầu cuộc trò chuyện ngay!</p>
             ) : (
               messages.map((msg) => {
                 const isSelf = msg.UserId === user.UserId;
                 return (
                   <div
                     key={msg.ChatMessageId}
-                    className={`flex gap-2.5 items-end ${isSelf ? "flex-row-reverse" : "flex-row"}`}
+                    className={`flex gap-2 items-end ${isSelf ? "flex-row-reverse" : "flex-row"}`}
                   >
                     {!isSelf && (
                       <img
                         src={msg.User?.AvatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${msg.User?.Username}`}
                         alt={msg.User?.Username}
-                        className="w-7 h-7 rounded-full bg-coral-50 shrink-0"
+                        className="w-6 h-6 rounded-full bg-coral-50 shadow-sm shrink-0 border border-stone-200/20"
                       />
                     )}
-                    <div className={`max-w-[70%] space-y-1 ${isSelf ? "items-end" : "items-start"}`}>
-                      <span className="text-[8px] font-bold text-tertiary-custom block px-1">
+                    <div className={`max-w-[75%] space-y-1 ${isSelf ? "items-end" : "items-start"}`}>
+                      <span className="text-[8px] font-bold text-stone-400 block px-1 leading-none">
                         {!isSelf && `${msg.User?.Username} • `}
                         {new Date(msg.CreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
-                      {/* Reply context - show quoted message */}
+                      
+                      {/* Quoted Message */}
                       {msg.ReplyToText && (
-                        <div className={`text-[9px] px-3 py-1 rounded-lg border-l-2 border-coral-300 dark:border-coral-500 ${isSelf ? "bg-coral-400/20" : "bg-stone-200 dark:bg-stone-700"} ${isSelf ? "text-white" : "text-stone-500 dark:text-stone-400"}`}>
-                          <span className="font-semibold">Đã phản hồi: </span>
+                        <div className={`text-[9px] px-2.5 py-1 rounded-xl border-l-2 border-coral-400/80 ${isSelf ? "bg-coral-500/10" : "bg-stone-100 dark:bg-stone-900"} text-stone-500 dark:text-stone-400 max-w-full truncate`}>
+                          <span className="font-bold">Đã phản hồi: </span>
                           {msg.ReplyToText}
                         </div>
                       )}
+
                       <div className="relative group cursor-pointer group-msg-bubble" onClick={(e) => {
                         e.stopPropagation();
                         setOpenMsgMenuId(openMsgMenuId === msg.ChatMessageId ? null : msg.ChatMessageId);
                       }}>
                         <div
-                          className={`rounded-2xl p-3 text-xs leading-relaxed ${
+                          className={`p-3 text-xs leading-relaxed transition-all shadow-sm ${
                             msg.IsDeleted
-                              ? "bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700 rounded-xl italic"
+                              ? "bg-stone-100 dark:bg-stone-950/40 text-stone-400 dark:text-stone-600 border border-stone-200/30 dark:border-stone-850/50 rounded-2xl italic"
                               : isSelf
-                                ? "bg-coral-500 text-white rounded-br-xs"
-                                : "bg-card-custom border border-custom text-app rounded-bl-xs shadow-xs"
+                                ? "bg-coral-500 text-white rounded-2xl rounded-br-sm"
+                                : "bg-white dark:bg-stone-900 border border-stone-200/30 dark:border-stone-850/60 text-stone-800 dark:text-stone-200 rounded-2xl rounded-bl-sm"
                           }`}
                         >
                           {msg.IsDeleted ? (
@@ -413,10 +413,10 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                           ) : (
                             <>
                               {msg.ImageUrl && (
-                                <div className="rounded-xl overflow-hidden mb-1.5 max-w-[200px] border border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-850">
+                                <div className="rounded-xl overflow-hidden mb-1.5 max-w-[200px] border border-stone-100 dark:border-stone-800 bg-stone-50">
                                   <img
                                     src={getApiUrl(msg.ImageUrl)}
-                                    alt="Gửi ảnh"
+                                    alt="Sent media"
                                     className="max-w-full max-h-[160px] object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -425,13 +425,14 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                                   />
                                 </div>
                               )}
-                              {msg.MessageText && <p>{msg.MessageText}</p>}
+                              {msg.MessageText && <p className="whitespace-pre-wrap">{msg.MessageText}</p>}
                             </>
                           )}
                         </div>
-                        {/* Menu button: shown on hover or when message is clicked/tapped */}
+
+                        {/* Hover Popup Actions */}
                         {!msg.IsDeleted && (
-                          <div className={`absolute top-1/2 -translate-y-1/2 ${isSelf ? "left-0 -translate-x-full pl-2" : "right-0 translate-x-full pr-2"} flex gap-1.5 items-center ${openMsgMenuId === msg.ChatMessageId ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity duration-150 z-20`}>
+                          <div className={`absolute top-1/2 -translate-y-1/2 ${isSelf ? "left-0 -translate-x-full pl-2" : "right-0 translate-x-full pr-2"} flex gap-1 items-center ${openMsgMenuId === msg.ChatMessageId ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"} transition-opacity duration-150 z-20`}>
                             <button
                               type="button"
                               onClick={(e) => {
@@ -439,7 +440,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                                 setReplyToMsg(replyToMsg?.ChatMessageId === msg.ChatMessageId ? null : msg);
                                 setOpenMsgMenuId(null);
                               }}
-                              className="w-6 h-6 rounded-full bg-card-custom border border-custom shadow-md flex items-center justify-center text-[10px] text-secondary-custom hover:text-coral-500 cursor-pointer active:scale-90"
+                              className="w-6 h-6 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-md flex items-center justify-center text-[10px] text-stone-500 hover:text-coral-500 cursor-pointer active:scale-90"
                               title="Phản hồi"
                             >
                               ↩
@@ -451,10 +452,10 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                                   e.stopPropagation();
                                   handleRecall(msg.ChatMessageId);
                                 }}
-                                className="w-6 h-6 rounded-full bg-card-custom border border-rose-200 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-md flex items-center justify-center text-[10px] cursor-pointer active:scale-90"
-                                title="Thu hồi tin nhắn"
+                                className="w-6 h-6 rounded-full bg-white dark:bg-stone-800 border border-rose-200 dark:border-rose-900/50 text-rose-500 hover:text-rose-600 hover:bg-rose-50 shadow-md flex items-center justify-center text-[10px] cursor-pointer active:scale-90"
+                                title="Thu hồi"
                               >
-                                🗑️
+                                <Trash size={10} />
                               </button>
                             )}
                           </div>
@@ -469,39 +470,54 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
           </div>
 
           {/* Bottom input section */}
-          <div className="pt-2 bg-app border-t border-custom shrink-0 space-y-2">
-            {/* Reply indicator */}
-            {replyToMsg && (
-              <div className="flex items-center gap-2 bg-coral-50 dark:bg-coral-500/15 border border-coral-200 dark:border-coral-500/30 px-3 py-1.5 rounded-xl text-[10px]">
-                <span className="font-bold text-coral-500 shrink-0">↩ Đang phản hồi:</span>
-                <span className="text-stone-600 dark:text-stone-400 truncate flex-1">{replyToMsg.MessageText || (replyToMsg.ImageUrl ? "[Hình ảnh]" : "")}</span>
-                <button onClick={() => setReplyToMsg(null)} className="text-tertiary-custom hover:text-app cursor-pointer shrink-0 text-xs">
-                  ✕
-                </button>
-              </div>
-            )}
-            {imagePreview && (
-              <div className="relative inline-block bg-card-custom p-1 rounded-xl border border-custom">
-                <img src={imagePreview} className="h-16 w-16 object-cover rounded-lg" alt="Preview" />
-                <button
-                  onClick={() => { setSelectedImage(null); setImagePreview(null); }}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-stone-900 text-white rounded-full flex items-center justify-center text-[10px] border border-white cursor-pointer"
+          <div className="pt-2 pb-4 bg-app border-t border-custom shrink-0 space-y-2.5">
+            {/* Reply bar indicator */}
+            <AnimatePresence>
+              {replyToMsg && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex items-center gap-2 bg-coral-50 dark:bg-coral-500/10 border border-coral-200/40 dark:border-coral-500/20 px-3 py-2 rounded-xl text-[10px]"
                 >
-                  ✕
-                </button>
-              </div>
-            )}
+                  <span className="font-bold text-coral-500 shrink-0">↩ Đang trả lời:</span>
+                  <span className="text-stone-600 dark:text-stone-400 truncate flex-1">{replyToMsg.MessageText || (replyToMsg.ImageUrl ? "[Hình ảnh]" : "")}</span>
+                  <button onClick={() => setReplyToMsg(null)} className="text-stone-400 hover:text-stone-600 cursor-pointer shrink-0 text-xs font-bold">
+                    ✕
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <div className="flex flex-col gap-1.5">
-              {/* Floating Quick Emojis row above input */}
+            <AnimatePresence>
+              {imagePreview && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="relative inline-block bg-white dark:bg-stone-900 p-1 rounded-xl border border-stone-200/50 dark:border-stone-800"
+                >
+                  <img src={imagePreview} className="h-16 w-16 object-cover rounded-lg" alt="Preview" />
+                  <button
+                    onClick={() => { setSelectedImage(null); setImagePreview(null); }}
+                    className="absolute -top-2 -right-2 w-5 h-5 bg-stone-900/90 text-white rounded-full flex items-center justify-center text-[10px] border border-white/20 cursor-pointer shadow"
+                  >
+                    ✕
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="flex flex-col gap-2">
+              {/* Quick Emojis row */}
               <div className="flex justify-start">
-                <div className="flex bg-card-custom border border-custom rounded-full px-2 py-0.5 items-center gap-1.5 shadow-xs">
+                <div className="flex bg-white/85 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200/40 dark:border-stone-800/80 rounded-full px-2 py-0.5 items-center gap-1.5 shadow-sm">
                   {["❤️", "🔥", "🎉", "😆"].map((emoji) => (
                     <button
                       key={emoji}
                       type="button"
                       onClick={() => triggerEmojiFloat(emoji)}
-                      className="w-7 h-7 flex items-center justify-center text-base active:scale-125 transition-transform cursor-pointer"
+                      className="w-7 h-7 flex items-center justify-center text-sm active:scale-130 hover:scale-115 transition-transform cursor-pointer"
                     >
                       {emoji}
                     </button>
@@ -509,12 +525,12 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                 </div>
               </div>
 
-              {/* Chat Input form */}
-              <form onSubmit={handleSend} className="w-full flex gap-1.5 bg-card-custom border border-custom rounded-full px-3 py-1.5 items-center shadow-xs">
+              {/* Input box */}
+              <form onSubmit={handleSend} className="w-full flex gap-2 bg-white/90 dark:bg-stone-900/60 backdrop-blur-xl border border-white/20 dark:border-stone-850/80 rounded-full px-3 py-2 items-center shadow-md">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current.click()}
-                  className="p-1 text-stone-450 hover:text-stone-650 active:scale-95 cursor-pointer shrink-0"
+                  className="p-1.5 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 active:scale-95 cursor-pointer shrink-0 transition-colors"
                 >
                   <Image size={18} />
                 </button>
@@ -524,16 +540,18 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                   placeholder="Nhập tin nhắn..."
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  className="flex-1 min-w-0 border-none focus:outline-none text-xs text-stone-900 px-1 placeholder-stone-400 bg-transparent"
+                  className="flex-1 min-w-0 border-none focus:outline-none text-xs text-stone-800 dark:text-stone-100 px-1 placeholder-stone-400 bg-transparent"
                 />
 
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   type="submit"
                   disabled={loading || (!text.trim() && !selectedImage)}
-                  className="p-1.5 bg-coral-500 hover:bg-coral-600 disabled:opacity-50 text-white rounded-full flex items-center justify-center active:scale-95 cursor-pointer shadow-md shadow-coral-500/10 shrink-0"
+                  className="p-2 bg-coral-500 hover:bg-coral-600 disabled:opacity-50 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md shadow-coral-500/15 shrink-0"
                 >
-                  <PaperPlaneRight size={14} weight="fill" />
-                </button>
+                  <PaperPlaneRight size={13} weight="fill" />
+                </motion.button>
               </form>
             </div>
           </div>
@@ -549,65 +567,82 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
       />
 
       {/* 3. Create Group Chat modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-6 z-50">
-          <div className="w-full max-w-xs bg-white rounded-3xl p-6 shadow-xl border border-stone-100">
-            <h3 className="font-display text-base font-bold text-stone-900 mb-4 flex items-center gap-1">
-              👥 Tạo Nhóm Chat Mới
-            </h3>
-            <form onSubmit={handleCreateGroupChat} className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Tên nhóm chat</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Team Ăn Nhậu, Bạn Cấp 3..."
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-xs bg-stone-50 text-stone-900"
-                />
-              </div>
+      <AnimatePresence>
+        {showCreateModal && (
+          <div className="fixed inset-0 z-55 flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs" 
+              onClick={() => { setShowCreateModal(false); setNewGroupName(""); setSelectedFriends([]); }}
+            />
 
-              <div>
-                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Chọn thành viên</label>
-                {friendsList.length === 0 ? (
-                  <p className="text-[10px] text-stone-400 py-1">Bạn cần có bạn bè trước khi lập nhóm chat!</p>
-                ) : (
-                  <div className="max-h-28 overflow-y-auto space-y-1.5 pr-1 border border-stone-150 rounded-xl p-2 bg-stone-50/50">
-                    {friendsList.map((friend) => (
-                      <label key={friend.UserId} className="flex items-center gap-2 text-xs text-stone-850 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={selectedFriends.includes(friend.UserId)}
-                          onChange={() => toggleSelectFriend(friend.UserId)}
-                          className="rounded text-coral-500 focus:ring-coral-500"
-                        />
-                        <span>{friend.Username}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-xs bg-white/95 dark:bg-stone-900/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20 dark:border-stone-800/80 z-10 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="font-display text-base font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+                👥 Tạo Nhóm Chat
+              </h3>
+              
+              <form onSubmit={handleCreateGroupChat} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-bold text-stone-400 uppercase tracking-wider">Tên nhóm chat</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: Team Ăn Nhậu, Bạn Cấp 3..."
+                    value={newGroupName}
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-xs bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 transition-all placeholder-stone-400"
+                  />
+                </div>
 
-              <div className="flex gap-2 pt-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => { setShowCreateModal(false); setNewGroupName(""); setSelectedFriends([]); }}
-                  className="flex-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl font-bold transition-all cursor-pointer"
-                >
-                  Đóng
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2 bg-coral-500 hover:bg-coral-600 text-white rounded-xl font-bold transition-all cursor-pointer"
-                >
-                  Tạo Nhóm
-                </button>
-              </div>
-            </form>
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-bold text-stone-400 uppercase tracking-wider">Chọn thành viên</label>
+                  {friendsList.length === 0 ? (
+                    <p className="text-[10px] text-stone-450 dark:text-stone-550 italic py-1 text-center">Bạn cần kết bạn trước khi lập nhóm chat!</p>
+                  ) : (
+                    <div className="max-h-28 overflow-y-auto space-y-1.5 pr-1 border border-stone-200/50 dark:border-stone-800/80 rounded-xl p-2.5 bg-stone-50/50 dark:bg-stone-950/30">
+                      {friendsList.map((friend) => (
+                        <label key={friend.UserId} className="flex items-center gap-2 text-xs text-stone-700 dark:text-stone-300 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={selectedFriends.includes(friend.UserId)}
+                            onChange={() => toggleSelectFriend(friend.UserId)}
+                            className="rounded border-stone-300 dark:border-stone-700 text-coral-500 focus:ring-coral-500"
+                          />
+                          <span className="font-medium">{friend.Username}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowCreateModal(false); setNewGroupName(""); setSelectedFriends([]); }}
+                    className="flex-1 py-2 bg-stone-50 dark:bg-stone-950/40 border border-stone-200/50 dark:border-stone-800/80 text-stone-500 dark:text-stone-400 rounded-xl text-xs font-semibold cursor-pointer active:scale-95 transition-all"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 bg-coral-500 hover:bg-coral-600 text-white rounded-xl text-xs font-semibold cursor-pointer active:scale-95 transition-all shadow-md shadow-coral-500/10"
+                  >
+                    Tạo Nhóm
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       <style>{`
         @keyframes floatUp {

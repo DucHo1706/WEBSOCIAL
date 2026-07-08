@@ -23,15 +23,11 @@ export default function App() {
   });
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [memories, setMemories] = useState([]);
-  const [chatMessages, setChatMessages] = useState([]); // Buffer for real-time messages
-  const [onlineUsers, setOnlineUsers] = useState([]); // List of online userIds
+  const [chatMessages, setChatMessages] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const [showRecap, setShowRecap] = useState(false);
   const [connection, setConnection] = useState(null);
-
-  // Sync activeTab to localStorage
-  useEffect(() => {
-    localStorage.setItem("activeTab", activeTab);
-  }, [activeTab]);
+  const [viewUserId, setViewUserId] = useState(null);
 
   // Search state
   const [showSearch, setShowSearch] = useState(false);
@@ -223,17 +219,17 @@ export default function App() {
 
     const handleReactionUpdate = (reactionUpdate) => {
       setMemories(prev => prev.map(m => {
-        if (m.MemoryId === reactionUpdate.memoryId) {
+        if (m.MemoryId === reactionUpdate.MemoryId) {
           let updatedReactions = m.Reactions ? [...m.Reactions] : [];
-          if (reactionUpdate.isRemoved) {
+          if (reactionUpdate.IsRemoved) {
             updatedReactions = updatedReactions.filter(r => 
-              !(r.User?.UserId === reactionUpdate.userId && r.EmojiType === reactionUpdate.emojiType)
+              !(r.User?.UserId === reactionUpdate.UserId && r.EmojiType === reactionUpdate.EmojiType)
             );
           } else {
             updatedReactions.push({
-              ReactionId: reactionUpdate.reactionId,
-              EmojiType: reactionUpdate.emojiType,
-              User: { UserId: reactionUpdate.userId, Username: reactionUpdate.username }
+              ReactionId: reactionUpdate.ReactionId,
+              EmojiType: reactionUpdate.EmojiType,
+              User: { UserId: reactionUpdate.UserId, Username: reactionUpdate.Username }
             });
           }
           return { ...m, Reactions: updatedReactions };
@@ -406,6 +402,11 @@ export default function App() {
     setUser(null);
   };
 
+  const handleViewProfile = (userId) => {
+    setViewUserId(userId);
+    setActiveTab("Profile");
+  };
+
   if (!user) {
     return (
       <Landing 
@@ -542,8 +543,11 @@ export default function App() {
           <Profile
             user={user}
             memories={memories}
+            viewUserId={viewUserId}
+            onViewProfile={handleViewProfile}
             onProfileUpdated={handleProfileUpdated}
             onLogout={handleLogout}
+            onCloseViewing={() => setViewUserId(null)}
           />
         )}
       </div>
