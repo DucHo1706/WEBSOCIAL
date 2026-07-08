@@ -313,8 +313,8 @@ export default function Profile({ user, memories, viewUserId, onViewProfile, onP
       </div>
 
       <div className="px-4 max-w-md mx-auto">
-        {/* Avatar + Name + Friend Count (Facebook Style) */}
-        <div className={`flex items-end gap-4 ${isEditing ? "-mt-8" : "-mt-14"} mb-3`}>
+        {/* Avatar (overlaps cover) */}
+        <div className={`flex justify-center sm:justify-start ${isEditing ? "-mt-8" : "-mt-14"} mb-2`}>
           <div className="relative shrink-0">
             <img
               src={isEditing ? (form.avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${form.username}`) : (currentUser.AvatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.Username}`)}
@@ -328,35 +328,6 @@ export default function Profile({ user, memories, viewUserId, onViewProfile, onP
               </label>
             )}
           </div>
-          <div className="flex-1 pb-2">
-            {!isEditing ? (
-              <>
-                <h2 className="font-display text-xl font-bold text-stone-900 dark:text-white leading-tight">
-                  {currentUser.Username}
-                  {currentUser.Nickname && <span className="text-stone-400 font-normal text-sm ml-1">({currentUser.Nickname})</span>}
-                </h2>
-                <p className="text-[10px] text-stone-500 dark:text-stone-400">{currentUser.Email}</p>
-                {/* Friend count (Facebook style) */}
-                {friends.length > 0 && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <div className="flex -space-x-1.5">
-                      {friends.slice(0, 5).map((f, i) => (
-                        <img key={i} src={f.AvatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${f.Username || f.FriendUsername}`}
-                          className="w-5 h-5 rounded-full border-2 border-white dark:border-[#1C1C1E] object-cover" alt="" />
-                      ))}
-                    </div>
-                    <span className="text-[10px] text-stone-500 font-medium">{friends.length} người bạn</span>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div>
-                <h2 className="font-display text-xl font-bold text-stone-900 dark:text-white leading-tight">
-                  {currentUser.Username}
-                </h2>
-                <p className="text-[10px] text-stone-500 dark:text-stone-400">{currentUser.Email}</p>
-              </div>
-            )}
           </div>
         </div>
 

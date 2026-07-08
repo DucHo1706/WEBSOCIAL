@@ -432,7 +432,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
 
                         {/* Hover Popup Actions */}
                         {!msg.IsDeleted && (
-                          <div className={`absolute top-1/2 -translate-y-1/2 ${isSelf ? "left-0 -translate-x-full pl-2" : "right-0 translate-x-full pr-2"} flex gap-1 items-center ${openMsgMenuId === msg.ChatMessageId ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"} transition-opacity duration-150 z-20`}>
+                          <div className={`absolute top-1/2 -translate-y-1/2 ${isSelf ? "left-0 -translate-x-full pl-2" : "right-0 translate-x-full pr-2"} flex gap-1.5 items-center ${openMsgMenuId === msg.ChatMessageId ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"} transition-opacity duration-150 z-20`}>
                             <button
                               type="button"
                               onClick={(e) => {
@@ -440,7 +440,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                                 setReplyToMsg(replyToMsg?.ChatMessageId === msg.ChatMessageId ? null : msg);
                                 setOpenMsgMenuId(null);
                               }}
-                              className="w-6 h-6 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-md flex items-center justify-center text-[10px] text-stone-500 hover:text-coral-500 cursor-pointer active:scale-90"
+                              className="w-9 h-9 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-md flex items-center justify-center text-sm text-stone-500 hover:text-coral-500 cursor-pointer active:scale-90"
                               title="Phản hồi"
                             >
                               ↩
@@ -452,10 +452,10 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                                   e.stopPropagation();
                                   handleRecall(msg.ChatMessageId);
                                 }}
-                                className="w-6 h-6 rounded-full bg-white dark:bg-stone-800 border border-rose-200 dark:border-rose-900/50 text-rose-500 hover:text-rose-600 hover:bg-rose-50 shadow-md flex items-center justify-center text-[10px] cursor-pointer active:scale-90"
+                                className="w-9 h-9 rounded-full bg-white dark:bg-stone-800 border border-rose-200 dark:border-rose-900/50 text-rose-500 hover:text-rose-600 hover:bg-rose-50 shadow-md flex items-center justify-center text-sm cursor-pointer active:scale-90"
                                 title="Thu hồi"
                               >
-                                <Trash size={10} />
+                                <Trash size={16} />
                               </button>
                             )}
                           </div>

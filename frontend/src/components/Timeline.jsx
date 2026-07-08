@@ -38,7 +38,7 @@ export default function Timeline({ user, group, memories, onCommentAdded, onReac
 
     setLoadingComments(true);
     try {
-      const data = await apiRequest("/api/memory/comment", "POST", {
+      const data = await apiRequest(`/api/comment/${memoryId}`, "POST", {
         memoryId,
         userId: user.UserId,
         text: newCommentText.trim()

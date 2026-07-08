@@ -296,7 +296,7 @@ export default function Home({ user, group, recentMemories, onNewMemoryAdded, on
     e.preventDefault();
     if (!editingComment || !editCommentText.trim()) return;
     try {
-      const updated = await apiRequest(`/api/memory/comment/${editingComment.CommentId}`, "PUT", {
+      const updated = await apiRequest(`/api/comment/${editingComment.CommentId}`, "PUT", {
         userId: user.UserId,
         text: editCommentText.trim()
       });
@@ -328,7 +328,7 @@ export default function Home({ user, group, recentMemories, onNewMemoryAdded, on
   const handleEditCommentDirect = async (comment, newText) => {
     if (!newText.trim()) return;
     try {
-      const updated = await apiRequest(`/api/memory/comment/${comment.CommentId}`, "PUT", {
+      const updated = await apiRequest(`/api/comment/${comment.CommentId}`, "PUT", {
         userId: user.UserId,
         text: newText.trim()
       });
@@ -359,7 +359,7 @@ export default function Home({ user, group, recentMemories, onNewMemoryAdded, on
   const handleDeleteComment = async (commentId, memoryId) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
     try {
-      await apiRequest(`/api/memory/comment/${commentId}?userId=${user.UserId}`, "DELETE");
+      await apiRequest(`/api/comment/${commentId}?userId=${user.UserId}`, "DELETE");
       // Remove comment from local state (handles replies as well)
       const memory = recentMemories.find(m => m.MemoryId === memoryId);
       if (memory) {
@@ -551,7 +551,7 @@ export default function Home({ user, group, recentMemories, onNewMemoryAdded, on
         payload.parentCommentId = parentId;
       }
 
-      const data = await apiRequest("/api/memory/comment", "POST", payload);
+      const data = await apiRequest(`/api/comment/${memoryId}`, "POST", payload);
       
       // Update memory in local list
       const existingMemory = recentMemories.find(m => m.MemoryId === memoryId);
