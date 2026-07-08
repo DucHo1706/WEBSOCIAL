@@ -37,60 +37,22 @@ export default function PostCard({
   onCommentClick, onImageClick, onDoubleTapReact, getReaction, getCount
 }) {
   const [activeImgIdx, setActiveImgIdx] = useState(0);
-  const [floatingHearts, setFloatingHearts] = useState([]);
   const images = memory.Images?.length > 0 ? memory.Images : (memory.ImageUrl ? [memory.ImageUrl] : []);
   const isOwner = memory.User?.UserId === user.UserId;
 
-  const handleDoubleTap = (e) => {
-    e.preventDefault();
-    const id = Date.now();
-    setFloatingHearts(prev => [...prev, id]);
-    setTimeout(() => setFloatingHearts(prev => prev.filter(h => h !== id)), 1200);
-    onDoubleTapReact?.(memory.MemoryId);
-  };
+  const isOwner = memory.User?.UserId === user.UserId;
 
-  // Polaroid cổ điển cho bài đăng có hình ảnh
+  // Polaroid card cho bài đăng có hình ảnh
   if (images.length > 0) {
     return (
       <div className="polaroid-card mb-6">
-        {/* Image inside polaroid */}
-        <div className="relative aspect-square rounded-sm overflow-hidden bg-stone-900 border border-stone-200/40 dark:border-stone-800/80 group cursor-pointer" onClick={() => onImageClick(images[activeImgIdx])} onDoubleClick={handleDoubleTap}>
-          <img src={getApiUrl(images[activeImgIdx])} alt="" className="w-full h-full object-cover select-none" />
-          {/* Privacy badge */}
-          {memory.Privacy && memory.Privacy !== "Public" && (
-            <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md text-[8px] font-bold bg-black/40 text-white backdrop-blur-sm">
-              {memory.Privacy === "Friends" ? "👥 Bạn bè" : "🔒 Riêng tư"}
-            </span>
-          )}
-          {/* Floating hearts */}
-          {floatingHearts.map(id => (
-            <span key={id} className="absolute bottom-4 left-1/2 -translate-x-1/2 animate-float-up pointer-events-none text-2xl select-none">❤️</span>
-          ))}
-        </div>
-
-        {/* Image dots indicator if multiple images */}
-        {images.length > 1 && (
-          <div className="flex justify-center gap-1.5 mt-2">
-            {images.map((_, idx) => (
-              <button key={idx} onClick={(e) => { e.stopPropagation(); setActiveImgIdx(idx); }} className={`h-1.5 rounded-full transition-all cursor-pointer ${idx === activeImgIdx ? 'bg-stone-800 dark:bg-stone-300 w-3' : 'bg-stone-300 dark:bg-stone-700 w-1.5'}`} />
-            ))}
-          </div>
-        )}
-
-        {/* Polaroid caption - handwritten style font */}
-        {memory.Caption && (
-          <p className="polaroid-caption">
-            {memory.Caption}
-          </p>
-        )}
-
-        {/* Footer info (owner, date, category) in simple handwriting/classic style */}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-stone-100 dark:border-stone-800/50">
+        {/* Header: Avatar + Username + Dots menu ở trên cùng */}
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <img src={memory.User?.AvatarUrl} alt={memory.User?.Username} className="w-6 h-6 rounded-full border border-stone-200 dark:border-stone-800 shadow-sm" />
+            <img src={memory.User?.AvatarUrl} alt={memory.User?.Username} className="w-7 h-7 rounded-full border border-stone-200 dark:border-stone-800 shadow-sm" />
             <div>
-              <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 block leading-tight">{memory.User?.Username}</span>
-              <span className="text-[8px] text-stone-400 block leading-none">{getRelativeTime(memory.CreatedAt)}</span>
+              <span className="text-xs font-bold text-stone-800 dark:text-stone-100 block leading-tight">{memory.User?.Username}</span>
+              <span className="text-[8px] text-stone-400 block">{getRelativeTime(memory.CreatedAt)}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -99,7 +61,6 @@ export default function PostCard({
                 {categories[memory.Category]}
               </span>
             )}
-            {/* Menu button */}
             <div className="relative">
               <button onClick={() => onToggleMenu(memory.MemoryId)} className="p-1 rounded-md hover:bg-stone-50 dark:hover:bg-stone-850 text-stone-400 hover:text-stone-600 transition-colors cursor-pointer">
                 <DotsThreeVertical size={16} weight="bold" />
@@ -111,7 +72,34 @@ export default function PostCard({
           </div>
         </div>
 
-        {/* Reactions & Actions in clean, subtle layout */}
+        {/* Image inside polaroid */}
+        <div className="relative aspect-square rounded-sm overflow-hidden bg-stone-900 border border-stone-200/40 dark:border-stone-800/80" onClick={() => onImageClick(images[activeImgIdx])}>
+          <img src={getApiUrl(images[activeImgIdx])} alt="" className="w-full h-full object-cover select-none" />
+          {/* Privacy badge */}
+          {memory.Privacy && memory.Privacy !== "Public" && (
+            <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md text-[8px] font-bold bg-black/40 text-white backdrop-blur-sm">
+              {memory.Privacy === "Friends" ? "👥 Bạn bè" : "🔒 Riêng tư"}
+            </span>
+          )}
+        </div>
+
+        {/* Image dots indicator if multiple images */}
+        {images.length > 1 && (
+          <div className="flex justify-center gap-1.5 mt-2">
+            {images.map((_, idx) => (
+              <button key={idx} onClick={(e) => { e.stopPropagation(); setActiveImgIdx(idx); }} className={`h-1.5 rounded-full transition-all cursor-pointer ${idx === activeImgIdx ? 'bg-stone-800 dark:bg-stone-300 w-3' : 'bg-stone-300 dark:bg-stone-700 w-1.5'}`} />
+            ))}
+          </div>
+        )}
+
+        {/* Polaroid caption */}
+        {memory.Caption && (
+          <p className="polaroid-caption">
+            {memory.Caption}
+          </p>
+        )}
+
+        {/* Reactions & Actions */}
         <div className="flex items-center justify-between mt-3 pt-2 border-t border-stone-50 dark:border-stone-900/30">
           <div className="flex flex-wrap gap-1">
             {["❤️", "😂", "😮", "😢", "👍", "😡"].map(emoji => {
@@ -135,7 +123,7 @@ export default function PostCard({
 
   // Card hiện đại cho bài đăng nhiều chữ / không có hình ảnh
   return (
-    <div className="bg-white/80 dark:bg-[#1C1C1E]/60 backdrop-blur-md border border-white/20 dark:border-stone-800/80 rounded-3xl p-5 shadow-lg shadow-stone-200/10 dark:shadow-none mb-6 transition-all duration-300 hover:shadow-xl">
+    <div className="bg-white/80 dark:bg-[#1C1C1E]/60 backdrop-blur-md border border-white/20 dark:border-stone-800/80 rounded-3xl p-5 shadow-lg shadow-stone-200/10 dark:shadow-none mb-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">

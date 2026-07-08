@@ -328,7 +328,6 @@ export default function Profile({ user, memories, viewUserId, onViewProfile, onP
               </label>
             )}
           </div>
-          </div>
         </div>
 
         {/* Edit form fields - Full width below avatar when editing */}
