@@ -332,7 +332,7 @@ export default function Profile({ user, memories, viewUserId, onViewProfile, onP
 
         {/* Edit form fields - Full width below avatar when editing */}
         {isEditing && (
-          <div className="bg-white dark:bg-[#1C1C1E] border border-stone-100 dark:border-[#3A3A3C] rounded-2xl p-4 space-y-4 mb-4 shadow-sm">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-stone-100 dark:border-[#3A3A3C] rounded-2xl p-4 space-y-4 mb-4 shadow-sm mt-32">
             <div>
               <label className="text-[9px] font-bold uppercase text-stone-400 dark:text-stone-500 tracking-wider">Tên hiển thị</label>
               <input type="text" required value={form.username} onChange={(e) => setForm(f => ({ ...f, username: e.target.value }))}
@@ -353,9 +353,32 @@ export default function Profile({ user, memories, viewUserId, onViewProfile, onP
           </div>
         )}
 
+        {/* Username + Info (when not editing) */}
+        {!isEditing && (
+          <div className="text-center sm:text-left mb-3">
+            <h2 className="font-display text-xl font-bold text-stone-900 dark:text-white leading-tight">
+              {currentUser.Username}
+              {currentUser.Nickname && <span className="text-stone-400 font-normal text-sm ml-1">({currentUser.Nickname})</span>}
+            </h2>
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{currentUser.Email}</p>
+            {/* Friend count (Facebook style) */}
+            {friends.length > 0 && (
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 mt-1.5">
+                <div className="flex -space-x-1.5">
+                  {friends.slice(0, 5).map((f, i) => (
+                    <img key={i} src={f.AvatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${f.Username || f.FriendUsername}`}
+                      className="w-5 h-5 rounded-full border-2 border-white dark:border-[#1C1C1E] object-cover" alt="" />
+                  ))}
+                </div>
+                <span className="text-[10px] text-stone-500 font-medium">{friends.length} người bạn</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Bio - only display when not editing */}
         {!isEditing && (
-          <div className="mb-4 text-center">
+          <div className="mb-4 text-center sm:text-left">
             {currentUser.Bio ? <p className="text-sm text-stone-600 dark:text-stone-300 leading-relaxed italic">"{currentUser.Bio}"</p>
               : <p className="text-xs text-stone-400 dark:text-stone-600 italic">Chưa có tiểu sử...</p>}
           </div>

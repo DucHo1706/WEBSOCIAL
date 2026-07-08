@@ -16,16 +16,16 @@ export default function CommentModal({ memory, comments, user, onClose, onAddCom
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-card-custom rounded-3xl p-4 w-full max-w-sm shadow-2xl border border-custom max-h-[70vh] h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3 pb-2 border-b border-custom">
-          <h4 className="text-sm font-bold text-app">💬 Bình luận</h4>
-          <button onClick={onClose} className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full cursor-pointer text-secondary-custom">
-            <X size={16} />
+          <h4 className="text-base font-bold text-app">💬 Bình luận</h4>
+          <button onClick={onClose} className="p-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full cursor-pointer text-secondary-custom">
+            <X size={20} />
           </button>
         </div>
 
         {/* Comments list */}
         <div className="overflow-y-auto space-y-3 pr-1 flex-1">
           {comments.length === 0 ? (
-            <p className="text-center text-[10px] text-stone-400 py-4">Chưa có bình luận nào.</p>
+            <p className="text-center text-xs text-stone-400 py-6">Chưa có bình luận nào.</p>
           ) : (
             comments.map((comment) => (
               <div key={comment.CommentId}>
@@ -69,11 +69,11 @@ export default function CommentModal({ memory, comments, user, onClose, onAddCom
 
         {/* Reply context bar */}
         {replyToComment && (
-          <div className="flex items-center gap-1.5 text-[10px] text-coral-500 bg-coral-50 dark:bg-coral-500/10 px-2.5 py-1.5 rounded-lg flex-wrap mt-2">
+          <div className="flex items-center gap-2 text-xs text-coral-500 bg-coral-50 dark:bg-coral-500/10 px-4 py-2.5 rounded-lg flex-wrap mt-2">
             <span className="font-bold shrink-0">↩ Đang phản hồi:</span>
             <span className="text-stone-500 dark:text-stone-400 truncate flex-1">{replyToComment.User?.Username}: {replyToComment.Text}</span>
             <button type="button" onClick={cancelReply} className="text-stone-400 hover:text-stone-600 cursor-pointer shrink-0">
-              <X size={12} />
+              <X size={14} />
             </button>
           </div>
         )}
@@ -85,14 +85,14 @@ export default function CommentModal({ memory, comments, user, onClose, onAddCom
             placeholder="Viết phản hồi của bạn..."
             value={newText}
             onChange={(e) => setNewText(e.target.value)}
-            className="flex-1 px-3 py-1.5 rounded-xl border border-custom focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-xs input-bg text-app"
+            className="flex-1 px-4 py-3 rounded-xl border border-custom focus:outline-none focus:ring-2 focus:ring-coral-500/20 focus:border-coral-500 text-sm input-bg text-app"
           />
           <button
             type="submit"
             disabled={loading}
-            className="p-1.5 bg-coral-500 hover:bg-coral-600 text-white rounded-xl flex items-center justify-center active:scale-95 transition-all cursor-pointer shadow-md shadow-coral-500/10"
+            className="px-4 py-3 bg-coral-500 hover:bg-coral-600 text-white rounded-xl flex items-center justify-center active:scale-95 transition-all cursor-pointer shadow-md shadow-coral-500/10"
           >
-            <PaperPlaneRight size={14} weight="fill" />
+            <PaperPlaneRight size={18} weight="fill" />
           </button>
         </form>
       </div>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChatCircle, DotsThreeVertical } from "@phosphor-icons/react";
+import { useState, useRef, useCallback } from "react";
+import { ChatCircle, DotsThreeVertical, Heart } from "@phosphor-icons/react";
 import { getApiUrl } from "../../api";
 import PostMenu from "./PostMenu";
 
@@ -37,10 +37,75 @@ export default function PostCard({
   onCommentClick, onImageClick, onDoubleTapReact, getReaction, getCount
 }) {
   const [activeImgIdx, setActiveImgIdx] = useState(0);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const holdTimerRef = useRef(null);
+  const didHoldRef = useRef(false);
+  const pressingSourceRef = useRef(null);
   const images = memory.Images?.length > 0 ? memory.Images : (memory.ImageUrl ? [memory.ImageUrl] : []);
   const isOwner = memory.User?.UserId === user.UserId;
 
-  const isOwner = memory.User?.UserId === user.UserId;
+  const EMOJIS = ["❤️", "😂", "😮", "😢", "👍", "😡"];
+
+  // Get user's current active reaction, if any
+  const userReaction = (memory.Reactions || []).find(r => r.User?.UserId === user.UserId);
+  const userEmoji = userReaction?.EmojiType || null;
+  const totalReactions = (memory.Reactions || []).length;
+
+  const handleReactionPick = (emoji) => {
+    didHoldRef.current = true; // Prevent endPress from also firing a toggle
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    setShowReactionPicker(false);
+    onDoubleTapReact?.(memory.MemoryId, emoji);
+  };
+
+  const startPress = () => {
+    didHoldRef.current = false;
+    holdTimerRef.current = setTimeout(() => {
+      didHoldRef.current = true;
+      setShowReactionPicker(true);
+    }, 350);
+  };
+
+  const endPress = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    // If picker is showing, don't fire like toggle
+    if (!didHoldRef.current) {
+      // Quick tap: toggle like
+      onDoubleTapReact?.(memory.MemoryId, userEmoji ? userEmoji : "❤️");
+    }
+    didHoldRef.current = false;
+  };
+
+  const cancelPress = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    didHoldRef.current = false;
+  };
+
+  // Reaction popup component
+  const ReactionPopup = () => (
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30">
+      <div className="bg-white dark:bg-[#2C2C2E] rounded-full shadow-xl border border-stone-200 dark:border-stone-700 px-3 py-2 flex gap-1.5 items-center">
+        {EMOJIS.map(emoji => (
+          <button
+            key={emoji}
+            onClick={(e) => { e.stopPropagation(); handleReactionPick(emoji); }}
+            className={`text-xl hover:scale-125 transition-transform cursor-pointer active:scale-150 ${userEmoji === emoji ? 'scale-125' : ''}`}
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   // Polaroid card cho bài đăng có hình ảnh
   if (images.length > 0) {
@@ -62,8 +127,8 @@ export default function PostCard({
               </span>
             )}
             <div className="relative">
-              <button onClick={() => onToggleMenu(memory.MemoryId)} className="p-1 rounded-md hover:bg-stone-50 dark:hover:bg-stone-850 text-stone-400 hover:text-stone-600 transition-colors cursor-pointer">
-                <DotsThreeVertical size={16} weight="bold" />
+              <button onClick={() => onToggleMenu(memory.MemoryId)} className="p-2 rounded-md hover:bg-stone-50 dark:hover:bg-stone-850 text-stone-400 hover:text-stone-600 transition-colors cursor-pointer">
+                <DotsThreeVertical size={20} weight="bold" />
               </button>
               {menuOpenId === memory.MemoryId && (
                 <PostMenu memoryId={memory.MemoryId} isOwner={isOwner} onClose={() => onToggleMenu(null)} onShare={onShare} onEdit={onEdit} onDelete={onDelete} />
@@ -101,22 +166,42 @@ export default function PostCard({
 
         {/* Reactions & Actions */}
         <div className="flex items-center justify-between mt-3 pt-2 border-t border-stone-50 dark:border-stone-900/30">
-          <div className="flex flex-wrap gap-1">
-            {["❤️", "😂", "😮", "😢", "👍", "😡"].map(emoji => {
-              const count = getCount?.(memory.Reactions, emoji) || 0;
-              const active = getReaction?.(memory.Reactions, emoji) || false;
-              return (
-                <button key={emoji} onClick={() => onDoubleTapReact?.(memory.MemoryId, emoji)} className={`px-1.5 py-0.5 rounded text-[10px] transition-all cursor-pointer ${active ? 'bg-coral-50 dark:bg-coral-500/10 border border-coral-200 dark:border-coral-500/20' : 'bg-transparent text-stone-500 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
-                  {emoji} {count > 0 && <span className="font-bold ml-0.5">{count}</span>}
-                </button>
-              );
-            })}
+          {/* Single Like button with hold-to-pick popup */}
+          <div className="relative"
+            onMouseDown={startPress}
+            onMouseUp={endPress}
+            onMouseLeave={cancelPress}
+            onTouchStart={startPress}
+            onTouchEnd={endPress}
+            onTouchCancel={cancelPress}
+          >
+            <button
+              type="button"
+              className={`flex items-center gap-2 text-sm font-bold transition-all cursor-pointer select-none px-4 py-2 rounded-xl ${
+                userEmoji
+                  ? 'bg-coral-50 dark:bg-coral-500/10 border border-coral-200 dark:border-coral-500/20 text-coral-600'
+                  : 'bg-stone-50 dark:bg-[#2C2C2E]/30 text-stone-500 hover:bg-stone-100 dark:hover:bg-[#2C2C2E]/50'
+              }`}
+            >
+              {userEmoji ? (
+                <span className="text-xl">{userEmoji}</span>
+              ) : (
+                <Heart size={18} weight="regular" />
+              )}
+              <span>Thích</span>
+              {totalReactions > 0 && <span className="text-stone-400 font-semibold">· {totalReactions}</span>}
+            </button>
+            {showReactionPicker && <ReactionPopup />}
           </div>
-          <button onClick={() => onCommentClick(memory.MemoryId)} className="flex items-center gap-1 text-[10px] font-bold text-stone-500 hover:text-coral-500 transition-colors cursor-pointer">
-            <ChatCircle size={13} />
+
+          <button onClick={() => onCommentClick(memory.MemoryId)} className="flex items-center gap-2 text-sm font-bold text-stone-500 hover:text-coral-500 transition-colors cursor-pointer px-4 py-2 rounded-xl bg-stone-50 dark:bg-[#2C2C2E]/30 hover:bg-stone-100 dark:hover:bg-[#2C2C2E]">
+            <ChatCircle size={18} />
             <span>Bình luận</span>
           </button>
         </div>
+
+        {/* Dismiss picker on outside click */}
+        {showReactionPicker && <div className="fixed inset-0 z-20" onClick={() => { setShowReactionPicker(false); didHoldRef.current = false; }} />}
       </div>
     );
   }
@@ -160,23 +245,42 @@ export default function PostCard({
 
       {/* Reactions & Actions Row */}
       <div className="flex items-center justify-between border-t border-stone-100 dark:border-stone-800/40 pt-3">
-        <div className="flex flex-wrap gap-1.5">
-          {["❤️", "😂", "😮", "😢", "👍", "😡"].map(emoji => {
-            const count = getCount?.(memory.Reactions, emoji) || 0;
-            const active = getReaction?.(memory.Reactions, emoji) || false;
-            return (
-              <button key={emoji} onClick={() => onDoubleTapReact?.(memory.MemoryId, emoji)} className={`px-2.5 py-1 rounded-full text-[10px] transition-all cursor-pointer ${active ? 'bg-coral-500 text-white font-semibold' : 'bg-stone-50 dark:bg-[#2C2C2E]/50 hover:bg-stone-100 dark:hover:bg-[#2C2C2E] text-stone-600 dark:text-stone-400'}`}>
-                {emoji} {count > 0 && <span className="ml-0.5">{count}</span>}
-              </button>
-            );
-          })}
+        {/* Single Like button with hold-to-pick popup */}
+        <div className="relative"
+          onMouseDown={startPress}
+          onMouseUp={endPress}
+          onMouseLeave={cancelPress}
+          onTouchStart={startPress}
+          onTouchEnd={endPress}
+          onTouchCancel={cancelPress}
+        >
+          <button
+            type="button"
+            className={`flex items-center gap-2 text-sm font-bold transition-all cursor-pointer select-none px-5 py-2.5 rounded-full ${
+              userEmoji
+                ? 'bg-coral-500 text-white shadow-md shadow-coral-500/20'
+                : 'bg-stone-50 dark:bg-[#2C2C2E]/50 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-[#2C2C2E]'
+            }`}
+          >
+            {userEmoji ? (
+              <span className="text-xl">{userEmoji}</span>
+            ) : (
+              <Heart size={20} weight="regular" />
+            )}
+            <span>Thích</span>
+            {totalReactions > 0 && <span className="opacity-70">· {totalReactions}</span>}
+          </button>
+          {showReactionPicker && <ReactionPopup />}
         </div>
 
-        <button onClick={() => onCommentClick(memory.MemoryId)} className="flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-coral-500 px-3.5 py-1.5 rounded-full bg-stone-50 dark:bg-[#2C2C2E]/50 hover:bg-stone-100 dark:hover:bg-[#2C2C2E] transition-all cursor-pointer">
-          <ChatCircle size={15} />
+        <button onClick={() => onCommentClick(memory.MemoryId)} className="flex items-center gap-2 text-sm font-semibold text-stone-500 hover:text-coral-500 px-5 py-2.5 rounded-full bg-stone-50 dark:bg-[#2C2C2E]/50 hover:bg-stone-100 dark:hover:bg-[#2C2C2E] transition-all cursor-pointer">
+          <ChatCircle size={18} />
           <span>Bình luận</span>
         </button>
       </div>
+      
+      {/* Dismiss picker on outside click */}
+      {showReactionPicker && <div className="fixed inset-0 z-20" onClick={() => { setShowReactionPicker(false); didHoldRef.current = false; }} />}
     </div>
   );
 }

@@ -15,11 +15,11 @@ export default function CommentItem({ comment, user, onEdit, onDelete, onPinTogg
   };
 
   return (
-    <div className={`flex gap-2 items-start text-[11px] ${isReply ? 'mt-1 pl-1 bg-stone-50/20 dark:bg-[#1C1C1E]/20' : 'bg-stone-50/50 dark:bg-[#1C1C1E]'} p-2 rounded-xl`}>
+    <div className={`flex gap-3 items-start text-sm ${isReply ? 'mt-2 pl-2 bg-stone-50/20 dark:bg-[#1C1C1E]/20' : 'bg-stone-50/50 dark:bg-[#1C1C1E]'} p-3.5 rounded-xl`}>
       <img
         src={comment.User?.AvatarUrl}
         alt={comment.User?.Username}
-        className={`${isReply ? 'w-5 h-5' : 'w-6 h-6'} rounded-full shrink-0`}
+        className={`${isReply ? 'w-6 h-6' : 'w-8 h-8'} rounded-full shrink-0`}
       />
       <div className="flex-1 min-w-0">
         {editing ? (
@@ -32,26 +32,26 @@ export default function CommentItem({ comment, user, onEdit, onDelete, onPinTogg
         ) : (
           <>
             <div className="flex justify-between items-center mb-0.5 gap-1">
-              <span className={`font-bold text-stone-800 dark:text-stone-300 truncate ${isReply ? 'text-[10px]' : ''}`}>{comment.User?.Username}</span>
-              <div className="flex items-center gap-1 shrink-0">
-                <span className="text-[8px] text-stone-400">{getRelativeTime(comment.CreatedAt)}</span>
+              <span className={`font-bold text-stone-800 dark:text-stone-300 truncate ${isReply ? 'text-xs' : 'text-sm'}`}>{comment.User?.Username}</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[10px] text-stone-400">{getRelativeTime(comment.CreatedAt)}</span>
                 <div className="relative">
-                  <button onClick={() => setOpenMenu(!openMenu)} className="p-1 text-stone-400 hover:text-stone-600 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer">
-                    <DotsThreeVertical size={14} />
+                  <button onClick={() => setOpenMenu(!openMenu)} className="p-1.5 text-stone-400 hover:text-stone-600 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer">
+                    <DotsThreeVertical size={18} />
                   </button>
                   {openMenu && (
-                    <div className="absolute right-0 top-6 z-20 bg-white dark:bg-[#1C1C1E] border border-custom rounded-xl shadow-xl py-1 w-36 text-[11px]">
+                    <div className="absolute right-0 top-7 z-20 bg-white dark:bg-[#1C1C1E] border border-custom rounded-xl shadow-xl py-1 w-40 text-xs">
                       {comment.User?.UserId === user.UserId && (
                         <>
-                          <button onClick={() => { setOpenMenu(false); setEditing(true); setEditText(comment.Text); }} className="w-full text-left px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 text-app cursor-pointer flex items-center gap-2">
-                            <PencilSimple size={12} /> Sửa
+                          <button onClick={() => { setOpenMenu(false); setEditing(true); setEditText(comment.Text); }} className="w-full text-left px-3 py-2 hover:bg-stone-50 dark:hover:bg-stone-800 text-app cursor-pointer flex items-center gap-2">
+                            <PencilSimple size={14} /> Sửa
                           </button>
-                          <button onClick={() => { setOpenMenu(false); onDelete(comment.CommentId); }} className="w-full text-left px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 text-rose-500 cursor-pointer flex items-center gap-2">
-                            <Trash size={12} /> Xóa
+                          <button onClick={() => { setOpenMenu(false); onDelete(comment.CommentId); }} className="w-full text-left px-3 py-2 hover:bg-stone-50 dark:hover:bg-stone-800 text-rose-500 cursor-pointer flex items-center gap-2">
+                            <Trash size={14} /> Xóa
                           </button>
                         </>
                       )}
-                      <button onClick={() => { setOpenMenu(false); onPinToggle(comment.CommentId, !comment.IsPinned); }} className="w-full text-left px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 text-app cursor-pointer flex items-center gap-2">
+                      <button onClick={() => { setOpenMenu(false); onPinToggle(comment.CommentId, !comment.IsPinned); }} className="w-full text-left px-3 py-2 hover:bg-stone-50 dark:hover:bg-stone-800 text-app cursor-pointer flex items-center gap-2 text-xs">
                         📌 {comment.IsPinned ? "Bỏ ghim" : "Ghim"}
                       </button>
                     </div>
@@ -59,30 +59,30 @@ export default function CommentItem({ comment, user, onEdit, onDelete, onPinTogg
                 </div>
               </div>
             </div>
-            {comment.Text && <p className="text-stone-600 dark:text-stone-400 leading-relaxed">{comment.Text}</p>}
+            {comment.Text && <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">{comment.Text}</p>}
             {/* Reactions */}
             {comment.Reactions?.length > 0 && (
-              <div className="flex gap-1 mt-1 flex-wrap">
+              <div className="flex gap-1.5 mt-1.5 flex-wrap">
                 {[...new Set(comment.Reactions.map(r => r.EmojiType))].map(emoji => (
-                  <span key={emoji} className="text-[10px] bg-stone-100 dark:bg-[#2C2C2E] px-1.5 py-0.5 rounded-full">
+                  <span key={emoji} className="text-sm bg-stone-100 dark:bg-[#2C2C2E] px-2 py-1 rounded-full">
                     {emoji} {comment.Reactions.filter(r => r.EmojiType === emoji).length}
                   </span>
                 ))}
               </div>
             )}
             {/* Action buttons */}
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-3 mt-1.5">
               <div className="relative">
-                <button onClick={() => setOpenEmoji(!openEmoji)} className="text-[10px] text-stone-400 hover:text-coral-500 cursor-pointer p-0.5">😊</button>
+                <button onClick={() => setOpenEmoji(!openEmoji)} className="text-sm text-stone-400 hover:text-coral-500 cursor-pointer p-1">😊</button>
                 {openEmoji && (
-                  <div className="absolute left-0 top-5 z-20 bg-white dark:bg-[#1C1C1E] border border-custom rounded-full shadow-xl px-2 py-1 flex gap-1 text-lg whitespace-nowrap">
+                  <div className="absolute left-0 top-6 z-20 bg-white dark:bg-[#1C1C1E] border border-custom rounded-full shadow-xl px-3 py-1.5 flex gap-1.5 text-2xl whitespace-nowrap">
                     {["❤️", "😂", "😮", "😢", "👍", "😡"].map(emoji => (
                       <button key={emoji} onClick={() => { setOpenEmoji(false); onReact(comment.CommentId, emoji); }} className="hover:scale-125 transition-transform cursor-pointer">{emoji}</button>
                     ))}
                   </div>
                 )}
               </div>
-              <button onClick={() => onReply(comment)} className="text-[9px] font-semibold text-coral-500 hover:text-coral-600 cursor-pointer">Phản hồi</button>
+              <button onClick={() => onReply(comment)} className="text-xs font-semibold text-coral-500 hover:text-coral-600 cursor-pointer px-3 py-1.5 rounded-lg bg-coral-50 hover:bg-coral-100">Phản hồi</button>
             </div>
           </>
         )}

@@ -591,20 +591,21 @@ export default function Home({ user, group, recentMemories, onNewMemoryAdded, on
 
   const handleReaction = async (memoryId, emoji) => {
     try {
-      const data = await apiRequest("/api/memory/react", "POST", {
+      const data = await apiRequest("/api/reaction/post", "POST", {
         memoryId,
         userId: user.UserId,
         emojiType: emoji
       });
       
-      // Update reaction list locally
+      // Update reaction list locally (backend: toggle off if same emoji, switch if different)
       const memory = recentMemories.find(m => m.MemoryId === memoryId);
       let updatedReactions = memory.Reactions ? [...memory.Reactions] : [];
-      if (data.IsRemoved) {
-        updatedReactions = updatedReactions.filter(r => 
-          !(r.User?.UserId === user.UserId && r.EmojiType === emoji)
-        );
-      } else {
+      
+      // Remove ALL existing reactions by this user (backend clears them all first)
+      updatedReactions = updatedReactions.filter(r => r.User?.UserId !== user.UserId);
+      
+      // If NOT removed (new reaction added), push it
+      if (!data.IsRemoved) {
         updatedReactions.push({
           ReactionId: data.reactionId,
           EmojiType: emoji,

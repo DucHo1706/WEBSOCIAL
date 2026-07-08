@@ -54,7 +54,7 @@ export default function Timeline({ user, group, memories, onCommentAdded, onReac
 
   const handleReaction = async (memoryId, emoji) => {
     try {
-      const data = await apiRequest("/api/memory/react", "POST", {
+      const data = await apiRequest("/api/reaction/post", "POST", {
         memoryId,
         userId: user.UserId,
         emojiType: emoji

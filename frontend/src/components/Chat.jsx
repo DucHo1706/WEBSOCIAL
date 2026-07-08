@@ -273,7 +273,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
   }, []);
 
   return (
-    <div className="pb-0 pt-4 px-4 max-w-md mx-auto flex flex-col h-[100dvh] relative overflow-hidden bg-app">
+    <div className="pb-0 pt-4 px-4 max-w-md mx-auto flex flex-col h-[calc(100dvh-1px)] relative overflow-hidden bg-app">
       {/* Floating Emoji Layer */}
       <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
         {floatingEmojis.map((e) => (
@@ -290,19 +290,19 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
       {/* Main Container */}
       {!activeConv ? (
         // 1. Conversations list
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden pb-20">
           <div className="flex justify-between items-center pb-4 border-b border-custom shrink-0">
             <div>
               <h2 className="font-display text-2xl font-bold text-stone-850 dark:text-stone-100">Hộp Thư Chat</h2>
-              <p className="text-[10px] text-stone-400 dark:text-stone-500 font-bold uppercase tracking-wider mt-0.5">Trò chuyện trực tuyến</p>
+              <p className="text-xs text-stone-400 dark:text-stone-500 font-bold uppercase tracking-wider mt-0.5">Trò chuyện trực tuyến</p>
             </div>
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setShowCreateModal(true)}
-              className="p-2.5 bg-coral-50 dark:bg-coral-500/10 hover:bg-coral-100 dark:hover:bg-coral-500/25 text-coral-500 rounded-xl flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-sm border border-coral-200/20"
+              className="px-4 py-3 bg-coral-50 dark:bg-coral-500/10 hover:bg-coral-100 dark:hover:bg-coral-500/25 text-coral-500 rounded-xl flex items-center justify-center gap-1.5 text-sm font-bold transition-all cursor-pointer shadow-sm border border-coral-200/20"
             >
-              <Plus size={16} weight="bold" />
+              <Plus size={18} weight="bold" />
               <span>Tạo nhóm</span>
             </motion.button>
           </div>
@@ -310,8 +310,8 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
           <div className="flex-1 overflow-y-auto py-3 space-y-2 pr-1 scrollbar-none">
             {conversations.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-stone-400 space-y-2">
-                <ChatCircle size={38} className="text-stone-300 dark:text-stone-700 mx-auto" />
-                <p className="text-xs">Bạn chưa có cuộc trò chuyện nào. Hãy kết bạn để bắt đầu tán gẫu nhé!</p>
+                <ChatCircle size={48} className="text-stone-300 dark:text-stone-700 mx-auto" />
+                <p className="text-sm">Bạn chưa có cuộc trò chuyện nào. Hãy kết bạn để bắt đầu tán gẫu nhé!</p>
               </div>
             ) : (
               conversations.map((c) => (
@@ -320,16 +320,16 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                   whileTap={{ scale: 0.99 }}
                   key={c.UserId}
                   onClick={() => setActiveConv(c)}
-                  className="flex items-center gap-3 p-3.5 bg-white/70 dark:bg-stone-900/50 backdrop-blur-md border border-white/20 dark:border-stone-850/50 rounded-2xl cursor-pointer hover:border-coral-200/50 hover:bg-coral-50/20 dark:hover:bg-coral-500/5 transition-all shadow-sm"
+                  className="flex items-center gap-4 p-4 bg-white/70 dark:bg-stone-900/50 backdrop-blur-md border border-white/20 dark:border-stone-850/50 rounded-2xl cursor-pointer hover:border-coral-200/50 hover:bg-coral-50/20 dark:hover:bg-coral-500/5 transition-all shadow-sm"
                 >
                   <img
                     src={c.AvatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${c.Name}`}
                     alt={c.Name}
-                    className={`w-10 h-10 rounded-full border bg-stone-50 shadow-inner ${c.IsGroup ? "border-amber-400" : "border-coral-300"}`}
+                    className={`w-12 h-12 rounded-full border bg-stone-50 shadow-inner ${c.IsGroup ? "border-amber-400" : "border-coral-300"}`}
                   />
                   <div className="flex-1 min-w-0">
-                    <span className="text-xs font-bold text-stone-800 dark:text-stone-150 block truncate leading-tight">{c.Name}</span>
-                    <span className="text-[9px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider block mt-1">
+                    <span className="text-sm font-bold text-stone-800 dark:text-stone-150 block truncate leading-tight">{c.Name}</span>
+                    <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider block mt-1">
                       {c.IsGroup ? "👥 Nhóm Chat" : "👤 Bạn Bè"}
                     </span>
                   </div>
@@ -340,23 +340,23 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
         </div>
       ) : (
         // 2. Chat screen room
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden pb-20">
           {/* Header */}
           <div className="flex items-center gap-3 pb-3 border-b border-custom shrink-0">
             <button
               onClick={() => { setActiveConv(null); setMessages([]); }}
-              className="p-1.5 hover:bg-stone-100 dark:hover:bg-stone-850 rounded-xl text-stone-500 dark:text-stone-400 cursor-pointer transition-colors active:scale-95"
+              className="p-2 hover:bg-stone-100 dark:hover:bg-stone-850 rounded-xl text-stone-500 dark:text-stone-400 cursor-pointer transition-colors active:scale-95"
             >
-              <CaretLeft size={20} weight="bold" />
+              <CaretLeft size={24} weight="bold" />
             </button>
             <img
               src={activeConv.AvatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${activeConv.Name}`}
               alt={activeConv.Name}
-              className="w-8 h-8 rounded-full border border-coral-200/30 bg-stone-50 shadow-sm"
+              className="w-10 h-10 rounded-full border border-coral-200/30 bg-stone-50 shadow-sm"
             />
             <div>
-              <span className="text-xs font-bold text-stone-850 dark:text-stone-150 block leading-tight">{activeConv.Name}</span>
-              <span className="text-[9px] text-stone-400 dark:text-stone-500 block mt-0.5">
+              <span className="text-sm font-bold text-stone-850 dark:text-stone-150 block leading-tight">{activeConv.Name}</span>
+              <span className="text-[10px] text-stone-400 dark:text-stone-500 block mt-0.5">
                 {activeConv.IsGroup ? "Nhóm trò chuyện" : "Đang hoạt động"}
               </span>
             </div>
@@ -365,7 +365,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
           {/* Messages list */}
           <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 scrollbar-none">
             {messages.length === 0 ? (
-              <p className="text-center text-[10px] text-stone-400 py-12 italic">Không có tin nhắn nào. Bắt đầu cuộc trò chuyện ngay!</p>
+              <p className="text-center text-xs text-stone-400 py-12 italic">Không có tin nhắn nào. Bắt đầu cuộc trò chuyện ngay!</p>
             ) : (
               messages.map((msg) => {
                 const isSelf = msg.UserId === user.UserId;
@@ -378,18 +378,18 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                       <img
                         src={msg.User?.AvatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${msg.User?.Username}`}
                         alt={msg.User?.Username}
-                        className="w-6 h-6 rounded-full bg-coral-50 shadow-sm shrink-0 border border-stone-200/20"
+                        className="w-8 h-8 rounded-full bg-coral-50 shadow-sm shrink-0 border border-stone-200/20"
                       />
                     )}
                     <div className={`max-w-[75%] space-y-1 ${isSelf ? "items-end" : "items-start"}`}>
-                      <span className="text-[8px] font-bold text-stone-400 block px-1 leading-none">
+                      <span className="text-[10px] font-bold text-stone-400 block px-1 leading-none">
                         {!isSelf && `${msg.User?.Username} • `}
                         {new Date(msg.CreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                       
                       {/* Quoted Message */}
                       {msg.ReplyToText && (
-                        <div className={`text-[9px] px-2.5 py-1 rounded-xl border-l-2 border-coral-400/80 ${isSelf ? "bg-coral-500/10" : "bg-stone-100 dark:bg-stone-900"} text-stone-500 dark:text-stone-400 max-w-full truncate`}>
+                        <div className={`text-[10px] px-3 py-2 rounded-xl border-l-2 border-coral-400/80 ${isSelf ? "bg-coral-500/10" : "bg-stone-100 dark:bg-stone-900"} text-stone-500 dark:text-stone-400 max-w-full truncate`}>
                           <span className="font-bold">Đã phản hồi: </span>
                           {msg.ReplyToText}
                         </div>
@@ -400,7 +400,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                         setOpenMsgMenuId(openMsgMenuId === msg.ChatMessageId ? null : msg.ChatMessageId);
                       }}>
                         <div
-                          className={`p-3 text-xs leading-relaxed transition-all shadow-sm ${
+                          className={`p-4 text-sm leading-relaxed transition-all shadow-sm ${
                             msg.IsDeleted
                               ? "bg-stone-100 dark:bg-stone-950/40 text-stone-400 dark:text-stone-600 border border-stone-200/30 dark:border-stone-850/50 rounded-2xl italic"
                               : isSelf
@@ -409,15 +409,15 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                           }`}
                         >
                           {msg.IsDeleted ? (
-                            <p className="flex items-center gap-1.5"><span className="text-[10px]">🚫</span> Tin nhắn đã bị thu hồi</p>
+                            <p className="flex items-center gap-1.5"><span className="text-xs">🚫</span> Tin nhắn đã bị thu hồi</p>
                           ) : (
                             <>
                               {msg.ImageUrl && (
-                                <div className="rounded-xl overflow-hidden mb-1.5 max-w-[200px] border border-stone-100 dark:border-stone-800 bg-stone-50">
+                                <div className="rounded-xl overflow-hidden mb-2 max-w-[240px] border border-stone-100 dark:border-stone-800 bg-stone-50">
                                   <img
                                     src={getApiUrl(msg.ImageUrl)}
                                     alt="Sent media"
-                                    className="max-w-full max-h-[160px] object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                    className="max-w-full max-h-[200px] object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       window.open(getApiUrl(msg.ImageUrl), '_blank');
@@ -440,7 +440,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                                 setReplyToMsg(replyToMsg?.ChatMessageId === msg.ChatMessageId ? null : msg);
                                 setOpenMsgMenuId(null);
                               }}
-                              className="w-9 h-9 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-md flex items-center justify-center text-sm text-stone-500 hover:text-coral-500 cursor-pointer active:scale-90"
+                              className="w-10 h-10 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-md flex items-center justify-center text-base text-stone-500 hover:text-coral-500 cursor-pointer active:scale-90"
                               title="Phản hồi"
                             >
                               ↩
@@ -452,10 +452,10 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                                   e.stopPropagation();
                                   handleRecall(msg.ChatMessageId);
                                 }}
-                                className="w-9 h-9 rounded-full bg-white dark:bg-stone-800 border border-rose-200 dark:border-rose-900/50 text-rose-500 hover:text-rose-600 hover:bg-rose-50 shadow-md flex items-center justify-center text-sm cursor-pointer active:scale-90"
+                                className="w-10 h-10 rounded-full bg-white dark:bg-stone-800 border border-rose-200 dark:border-rose-900/50 text-rose-500 hover:text-rose-600 hover:bg-rose-50 shadow-md flex items-center justify-center text-base cursor-pointer active:scale-90"
                                 title="Thu hồi"
                               >
-                                <Trash size={16} />
+                                <Trash size={18} />
                               </button>
                             )}
                           </div>
@@ -470,7 +470,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
           </div>
 
           {/* Bottom input section */}
-          <div className="pt-2 pb-4 bg-app border-t border-custom shrink-0 space-y-2.5">
+          <div className="pt-3 pb-6 bg-app border-t border-custom shrink-0 space-y-3">
             {/* Reply bar indicator */}
             <AnimatePresence>
               {replyToMsg && (
@@ -478,9 +478,9 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-2 bg-coral-50 dark:bg-coral-500/10 border border-coral-200/40 dark:border-coral-500/20 px-3 py-2 rounded-xl text-[10px]"
+                  className="flex items-center gap-2 bg-coral-50 dark:bg-coral-500/10 border border-coral-200/40 dark:border-coral-500/20 px-4 py-3 rounded-xl text-xs"
                 >
-                  <span className="font-bold text-coral-500 shrink-0">↩ Đang trả lời:</span>
+                  <span className="font-bold text-coral-500 shrink-0 text-xs">↩ Đang trả lời:</span>
                   <span className="text-stone-600 dark:text-stone-400 truncate flex-1">{replyToMsg.MessageText || (replyToMsg.ImageUrl ? "[Hình ảnh]" : "")}</span>
                   <button onClick={() => setReplyToMsg(null)} className="text-stone-400 hover:text-stone-600 cursor-pointer shrink-0 text-xs font-bold">
                     ✕
@@ -511,13 +511,13 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
             <div className="flex flex-col gap-2">
               {/* Quick Emojis row */}
               <div className="flex justify-start">
-                <div className="flex bg-white/85 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200/40 dark:border-stone-800/80 rounded-full px-2 py-0.5 items-center gap-1.5 shadow-sm">
+                <div className="flex bg-white/85 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200/40 dark:border-stone-800/80 rounded-full px-3 py-1 items-center gap-2 shadow-sm">
                   {["❤️", "🔥", "🎉", "😆"].map((emoji) => (
                     <button
                       key={emoji}
                       type="button"
                       onClick={() => triggerEmojiFloat(emoji)}
-                      className="w-7 h-7 flex items-center justify-center text-sm active:scale-130 hover:scale-115 transition-transform cursor-pointer"
+                      className="w-8 h-8 flex items-center justify-center text-base active:scale-130 hover:scale-115 transition-transform cursor-pointer"
                     >
                       {emoji}
                     </button>
@@ -526,13 +526,13 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
               </div>
 
               {/* Input box */}
-              <form onSubmit={handleSend} className="w-full flex gap-2 bg-white/90 dark:bg-stone-900/60 backdrop-blur-xl border border-white/20 dark:border-stone-850/80 rounded-full px-3 py-2 items-center shadow-md">
+              <form onSubmit={handleSend} className="w-full flex gap-2 bg-white/90 dark:bg-stone-900/60 backdrop-blur-xl border border-white/20 dark:border-stone-850/80 rounded-full px-4 py-3 items-center shadow-md">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current.click()}
-                  className="p-1.5 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 active:scale-95 cursor-pointer shrink-0 transition-colors"
+                  className="p-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 active:scale-95 cursor-pointer shrink-0 transition-colors"
                 >
-                  <Image size={18} />
+                  <Image size={22} />
                 </button>
 
                 <input
@@ -540,7 +540,7 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                   placeholder="Nhập tin nhắn..."
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  className="flex-1 min-w-0 border-none focus:outline-none text-xs text-stone-800 dark:text-stone-100 px-1 placeholder-stone-400 bg-transparent"
+                  className="flex-1 min-w-0 border-none focus:outline-none text-sm text-stone-800 dark:text-stone-100 px-1 placeholder-stone-400 bg-transparent"
                 />
 
                 <motion.button
@@ -548,9 +548,9 @@ export default function Chat({ user, chatMessages, onSendMessage, onEmojiReactio
                   whileTap={{ scale: 0.95 }}
                   type="submit"
                   disabled={loading || (!text.trim() && !selectedImage)}
-                  className="p-2 bg-coral-500 hover:bg-coral-600 disabled:opacity-50 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md shadow-coral-500/15 shrink-0"
+                  className="p-3 bg-coral-500 hover:bg-coral-600 disabled:opacity-50 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md shadow-coral-500/15 shrink-0"
                 >
-                  <PaperPlaneRight size={13} weight="fill" />
+                  <PaperPlaneRight size={18} weight="fill" />
                 </motion.button>
               </form>
             </div>
